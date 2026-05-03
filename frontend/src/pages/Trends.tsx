@@ -61,7 +61,7 @@ export function Trends() {
           <h3 className="text-sm text-gray-500 uppercase tracking-wide mb-4">What you use AI for</h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
-              <Pie data={activityData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+              <Pie data={activityData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}>
                 {activityData.map((_, i) => <Cell key={i} fill={['#6366F1', '#10B981', '#F59E0B', '#EF4444'][i % 4]} />)}
               </Pie>
               <Tooltip />
