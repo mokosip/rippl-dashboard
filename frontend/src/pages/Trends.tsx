@@ -5,6 +5,8 @@ import { TrendChart } from '../components/TrendChart'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { getDomain } from '../data/domains'
 
+const ACTIVITY_COLORS = ['#5C7A52', '#B05F3F', '#8B4830', '#1F4E68']
+
 export function Trends() {
   const [weekly, setWeekly] = useState<WeeklyTrend[]>([])
   const [timeSaved, setTimeSaved] = useState<TimeSaved | null>(null)
@@ -18,7 +20,7 @@ export function Trends() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <div className="text-center py-16 text-gray-500">Loading trends...</div>
+  if (loading) return <div className="text-center py-16 text-fg-muted">Loading trends...</div>
 
   const domainData = timeSaved ? Object.entries(timeSaved.byDomain).map(([domain, saved]) => ({
     name: getDomain(domain).name,
@@ -34,15 +36,15 @@ export function Trends() {
   return (
     <div className="space-y-8">
       <div className="flex gap-2">
-        <button onClick={() => setView('weekly')} className={`px-3 py-1 rounded text-sm ${view === 'weekly' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}>Weekly</button>
-        <button onClick={() => setView('monthly')} className={`px-3 py-1 rounded text-sm ${view === 'monthly' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}>Monthly</button>
+        <button onClick={() => setView('weekly')} className={`px-3 py-1 rounded-input text-sm ${view === 'weekly' ? 'bg-primary text-fg-on-primary' : 'bg-muted text-fg-secondary'}`}>Weekly</button>
+        <button onClick={() => setView('monthly')} className={`px-3 py-1 rounded-input text-sm ${view === 'monthly' ? 'bg-primary text-fg-on-primary' : 'bg-muted text-fg-secondary'}`}>Monthly</button>
       </div>
 
       <TrendChart data={view === 'weekly' ? weekly : monthly.map(m => ({ week: m.month, domain: m.domain, totalSeconds: m.totalSeconds, totalSaved: m.totalSaved }))} />
 
       {domainData.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-sm text-gray-500 uppercase tracking-wide mb-4">Time saved by tool</h3>
+        <div className="bg-card rounded-card shadow-sm p-6">
+          <h3 className="text-sm text-fg-muted uppercase tracking-wide mb-4">Time saved by tool</h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={domainData} layout="vertical">
               <XAxis type="number" unit=" min" />
@@ -57,12 +59,12 @@ export function Trends() {
       )}
 
       {activityData.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-sm text-gray-500 uppercase tracking-wide mb-4">What you use AI for</h3>
+        <div className="bg-card rounded-card shadow-sm p-6">
+          <h3 className="text-sm text-fg-muted uppercase tracking-wide mb-4">What you use AI for</h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie data={activityData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}>
-                {activityData.map((_, i) => <Cell key={i} fill={['#6366F1', '#10B981', '#F59E0B', '#EF4444'][i % 4]} />)}
+                {activityData.map((_, i) => <Cell key={i} fill={ACTIVITY_COLORS[i % ACTIVITY_COLORS.length]} />)}
               </Pie>
               <Tooltip />
             </PieChart>

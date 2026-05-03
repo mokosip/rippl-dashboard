@@ -20,8 +20,8 @@ export function TrendChart({ data }: { data: WeeklyTrend[] }) {
   if (chartData.length === 0) return null
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h3 className="text-sm text-gray-500 uppercase tracking-wide mb-4">AI Usage (minutes/week)</h3>
+    <div className="bg-card rounded-card shadow-sm p-6">
+      <h3 className="text-sm text-fg-muted uppercase tracking-wide mb-4">AI Usage (minutes/week)</h3>
       <ResponsiveContainer width="100%" height={300}>
         <AreaChart data={chartData}>
           <XAxis dataKey="week" tickFormatter={w => new Date(w).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />

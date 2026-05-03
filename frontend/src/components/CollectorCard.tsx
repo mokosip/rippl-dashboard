@@ -11,16 +11,16 @@ const TYPE_LABELS: Record<string, string> = {
 
 export function CollectorCard({ collector, onRemove }: Props) {
   return (
-    <div className="flex items-center justify-between bg-white rounded-lg shadow p-4">
+    <div className="flex items-center justify-between bg-card rounded-card shadow-sm p-4">
       <div>
-        <p className="font-medium text-gray-900">{TYPE_LABELS[collector.type] ?? collector.type}</p>
-        <p className="text-sm text-gray-500">
+        <p className="font-medium text-fg">{TYPE_LABELS[collector.type] ?? collector.type}</p>
+        <p className="text-sm text-fg-muted">
           Connected {new Date(collector.linkedAt).toLocaleDateString()}
         </p>
       </div>
       <button
         onClick={() => onRemove(collector.id)}
-        className="text-red-600 hover:text-red-800 text-sm"
+        className="text-fg-error hover:text-destructive text-sm"
       >
         Remove
       </button>

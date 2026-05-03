@@ -25,7 +25,7 @@ export function Dashboard() {
     }).finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <div className="text-center py-16 text-gray-500">Loading dashboard...</div>
+  if (loading) return <div className="text-center py-16 text-fg-muted">Loading dashboard...</div>
   if (!timeSaved || timeSaved.total === 0) return <OnboardingChecklist />
 
   return (
@@ -34,7 +34,7 @@ export function Dashboard() {
       <TrendChart data={trends} />
       {insights.length > 0 && (
         <div>
-          <h3 className="text-sm text-gray-500 uppercase tracking-wide mb-4">Mirror Moments</h3>
+          <h3 className="text-sm text-fg-muted uppercase tracking-wide mb-4">Mirror Moments</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {insights.map((m, i) => <MirrorMomentCard key={i} moment={m} />)}
           </div>
