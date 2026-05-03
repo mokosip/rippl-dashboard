@@ -17,9 +17,6 @@ export function Layout() {
         <div className="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
           <NavLink to="/" className="text-xl font-bold font-serif text-fg">rippl</NavLink>
           <div className="flex gap-6 items-center">
-            <NavLink to="/" end className={({ isActive }) =>
-              isActive ? 'text-fg-active font-medium' : 'text-fg-secondary hover:text-fg'
-            }>Dashboard</NavLink>
             <NavLink to="/trends" className={({ isActive }) =>
               isActive ? 'text-fg-active font-medium' : 'text-fg-secondary hover:text-fg'
             }>Trends</NavLink>
