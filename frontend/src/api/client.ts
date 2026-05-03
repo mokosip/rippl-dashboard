@@ -7,7 +7,6 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     credentials: 'same-origin',
   })
   if (res.status === 401) {
-    window.location.href = '/login'
     throw new Error('Unauthorized')
   }
   if (!res.ok) throw new Error(`API error: ${res.status}`)
