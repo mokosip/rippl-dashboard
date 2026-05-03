@@ -9,6 +9,9 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
+  security:
+    user:
+      password: unused
 
 server:
   tomcat:
