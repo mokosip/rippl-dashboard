@@ -1,0 +1,26 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Environment
+.env
+.env.local
+
+# Kotlin
+*.class
+
+# Test
+backend/src/main/resources/static/

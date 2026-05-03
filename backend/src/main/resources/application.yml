@@ -1,0 +1,29 @@
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/rippl}
+    username: ${DB_USERNAME:rippl}
+    password: ${DB_PASSWORD:rippl}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+
+server:
+  tomcat:
+    max-swallow-size: 2MB
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:dev-secret-min-32-chars-long-for-hmac}
+    session-expiry-days: 7
+    magic-link-expiry-minutes: 15
+  resend:
+    api-key: ${RESEND_API_KEY:re_test}
+    from: noreply@ripplup.app
+  base-url: ${BASE_URL:http://localhost:8080}
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  extension-id: ${EXTENSION_ID:dev-extension-id}
+  rate-limit:
+    sync-per-minute: 10

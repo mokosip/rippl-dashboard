@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/rippl
+    username: rippl
+    password: rippl
+
+app:
+  base-url: http://localhost:8080
+  frontend-url: http://localhost:5173
