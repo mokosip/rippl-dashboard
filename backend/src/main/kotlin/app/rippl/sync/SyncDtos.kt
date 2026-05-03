@@ -14,7 +14,7 @@ data class SyncSessionDto(
     val activityType: String? = null,
     val estimatedWithoutMinutes: Int? = null,
     val timeSavedMinutes: Int? = null,
-    val logged: Boolean = false
+    val logged: Boolean? = false
 )
 
 data class SyncResponse(val accepted: Int, val duplicates: Int, val syncedAt: Long)

@@ -7,7 +7,7 @@ COPY frontend/ .
 RUN npm run build
 
 # Stage 2: Build backend
-FROM gradle:8.10-jdk21 AS backend
+FROM gradle:9.5-jdk25 AS backend
 WORKDIR /app
 COPY settings.gradle.kts .
 COPY backend/ backend/
@@ -16,7 +16,7 @@ WORKDIR /app/backend
 RUN gradle bootJar --no-daemon -x test
 
 # Stage 3: Runtime
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 WORKDIR /app
 COPY --from=backend /app/backend/build/libs/*.jar app.jar
 EXPOSE 8080
