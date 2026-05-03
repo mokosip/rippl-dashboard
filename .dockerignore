@@ -1,0 +1,10 @@
+.git
+.idea
+.gradle
+build
+node_modules
+frontend/node_modules
+frontend/dist
+*.md
+.claude
+docs
