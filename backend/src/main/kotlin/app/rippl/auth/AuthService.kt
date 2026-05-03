@@ -1,5 +1,6 @@
 package app.rippl.auth
 
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClient
@@ -18,14 +19,22 @@ class AuthService(
     @Value("\${app.base-url}") private val baseUrl: String,
     @Value("\${app.jwt.magic-link-expiry-minutes}") private val magicLinkExpiryMinutes: Int
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
     private val restClient = RestClient.create()
 
     fun sendMagicLink(email: String) {
-        val user = userRepository.findByEmail(email)
-            ?: userRepository.save(User(email = email))
+        val existingUser = userRepository.findByEmail(email)
+        val user = if (existingUser != null) {
+            log.debug("Existing user found for email: {}", email)
+            existingUser
+        } else {
+            log.debug("Creating new user for email: {}", email)
+            userRepository.save(User(email = email))
+        }
 
         val jti = UUID.randomUUID()
         val token = jwtService.generateMagicLinkToken(email, jti)
+        log.debug("Magic-link token generated for user: {}", user.id)
 
         authTokenRepository.save(
             AuthToken(
@@ -37,8 +46,9 @@ class AuthService(
 
         val link = "$baseUrl/api/auth/verify?token=$token"
 
-        // In test/dev mode with api key "re_test", skip actual email sending
-        if (!resendApiKey.startsWith("re_test")) {
+        if (resendApiKey.startsWith("re_test")) {
+            log.info("DEV magic link: $link")
+        } else {
             restClient.post()
                 .uri("https://api.resend.com/emails")
                 .header("Authorization", "Bearer $resendApiKey")
@@ -55,13 +65,32 @@ class AuthService(
     }
 
     fun verifyMagicLink(token: String): User? {
-        val claims = jwtService.validateMagicLinkToken(token) ?: return null
-        val jti = claims.id ?: return null
+        val claims = jwtService.validateMagicLinkToken(token)
+        if (claims == null) {
+            log.debug("Magic-link verification failed: JWT invalid")
+            return null
+        }
+        val jti = claims.id
+        if (jti == null) {
+            log.debug("Magic-link verification failed: missing jti claim")
+            return null
+        }
 
-        val authToken = authTokenRepository.findByTokenHash(sha256(jti)) ?: return null
-        if (authToken.usedAt != null) return null
-        if (authToken.expiresAt.isBefore(Instant.now())) return null
+        val authToken = authTokenRepository.findByTokenHash(sha256(jti))
+        if (authToken == null) {
+            log.debug("Magic-link verification failed: token not found in store")
+            return null
+        }
+        if (authToken.usedAt != null) {
+            log.debug("Magic-link verification failed: token already used")
+            return null
+        }
+        if (authToken.expiresAt.isBefore(Instant.now())) {
+            log.debug("Magic-link verification failed: token expired")
+            return null
+        }
 
+        log.debug("Magic-link valid, marking as used for user: {}", authToken.userId)
         authToken.usedAt = Instant.now()
         authTokenRepository.save(authToken)
 

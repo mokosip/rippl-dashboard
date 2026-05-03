@@ -1,5 +1,6 @@
 package app.rippl.trends
 
+import org.slf4j.LoggerFactory
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
 import java.time.LocalDate
@@ -7,9 +8,11 @@ import java.util.UUID
 
 @Service
 class TrendsService(private val jdbc: JdbcTemplate) {
+    private val log = LoggerFactory.getLogger(javaClass)
 
-    fun weekly(userId: UUID, from: LocalDate, to: LocalDate): List<WeeklyTrend> =
-        jdbc.query(
+    fun weekly(userId: UUID, from: LocalDate, to: LocalDate): List<WeeklyTrend> {
+        log.debug("Querying weekly trends for userId: {}, from: {}, to: {}", userId, from, to)
+        val results = jdbc.query(
             """
             SELECT date_trunc('week', date)::date AS week, domain,
                    SUM(active_seconds)::bigint AS total_seconds,
@@ -29,9 +32,13 @@ class TrendsService(private val jdbc: JdbcTemplate) {
             },
             userId, from, to
         )
+        log.debug("Weekly trends result count: {}", results.size)
+        return results
+    }
 
-    fun monthly(userId: UUID, from: LocalDate, to: LocalDate): List<MonthlyTrend> =
-        jdbc.query(
+    fun monthly(userId: UUID, from: LocalDate, to: LocalDate): List<MonthlyTrend> {
+        log.debug("Querying monthly trends for userId: {}, from: {}, to: {}", userId, from, to)
+        val results = jdbc.query(
             """
             SELECT date_trunc('month', date)::date AS month, domain,
                    SUM(active_seconds)::bigint AS total_seconds,
@@ -51,8 +58,12 @@ class TrendsService(private val jdbc: JdbcTemplate) {
             },
             userId, from, to
         )
+        log.debug("Monthly trends result count: {}", results.size)
+        return results
+    }
 
     fun timeSaved(userId: UUID): TimeSaved {
+        log.debug("Querying time-saved for userId: {}", userId)
         val total = jdbc.queryForObject(
             "SELECT COALESCE(SUM(time_saved_minutes), 0) FROM sessions WHERE user_id = ?",
             Int::class.java, userId
@@ -78,6 +89,7 @@ class TrendsService(private val jdbc: JdbcTemplate) {
             userId
         ).toMap()
 
+        log.debug("Time-saved for userId: {} — total: {}min, domains: {}, activities: {}", userId, total, byDomain.size, byActivity.size)
         return TimeSaved(total, byDomain, byActivity)
     }
 }

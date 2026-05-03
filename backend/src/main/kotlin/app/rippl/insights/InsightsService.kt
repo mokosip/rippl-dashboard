@@ -1,5 +1,6 @@
 package app.rippl.insights
 
+import org.slf4j.LoggerFactory
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
 import java.util.UUID
@@ -8,6 +9,7 @@ data class MirrorMoment(val type: String, val message: String)
 
 @Service
 class InsightsService(private val jdbc: JdbcTemplate) {
+    private val log = LoggerFactory.getLogger(javaClass)
 
     private val dayNames = arrayOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
 
@@ -17,6 +19,7 @@ class InsightsService(private val jdbc: JdbcTemplate) {
         topTool(userId)?.let { moments.add(it) }
         timeSavingActivity(userId)?.let { moments.add(it) }
         busiestDay(userId)?.let { moments.add(it) }
+        log.debug("Generated {} mirror moments for userId: {} — types: {}", moments.size, userId, moments.map { it.type })
         return moments
     }
 
