@@ -16,6 +16,8 @@ const MOCK_DATA = [
 
 export function ActivityPond({ data }: ActivityPondProps) {
   const grid = data ?? MOCK_DATA
+  const maxVal = Math.max(1, ...grid.flat())
+  const normalized = grid.map(row => row.map(v => v / maxVal))
 
   return (
     <div className="pond-card">
@@ -30,7 +32,7 @@ export function ActivityPond({ data }: ActivityPondProps) {
         </div>
         <div className="flex-1">
           <div className="grid gap-[3px]" style={{ gridTemplateColumns: 'repeat(24, 1fr)' }}>
-            {grid.flatMap((dayRow, day) =>
+            {normalized.flatMap((dayRow, day) =>
               dayRow.map((val, hour) => (
                 <div
                   key={`${day}-${hour}`}

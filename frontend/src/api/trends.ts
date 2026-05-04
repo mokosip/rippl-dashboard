@@ -20,3 +20,7 @@ export function getMonthlyTrends(from?: string, to?: string): Promise<MonthlyTre
 export function getTimeSaved(): Promise<TimeSaved> {
   return api.get('/trends/time-saved')
 }
+
+export function getActivityHeatmap(): Promise<number[][]> {
+  return api.get('/trends/activity-heatmap')
+}

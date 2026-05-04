@@ -40,4 +40,9 @@ class TrendsController(private val trendsService: TrendsService) {
         log.debug("Time-saved trends requested for userId: {}", userId)
         return trendsService.timeSaved(userId)
     }
+
+    @GetMapping("/activity-heatmap")
+    fun activityHeatmap(@AuthenticationPrincipal userId: UUID): List<List<Int>> {
+        return trendsService.activityHeatmap(userId)
+    }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getWeeklyTrends, getMonthlyTrends, getTimeSaved } from '../api/trends'
+import { getWeeklyTrends, getMonthlyTrends, getTimeSaved, getActivityHeatmap } from '../api/trends'
 import type { WeeklyTrend, MonthlyTrend, TimeSaved } from '../types'
 import { PondChart } from '../components/PondChart'
 import { ActivityPond } from '../components/ActivityPond'
@@ -12,11 +12,12 @@ export function Trends() {
   const [timeSaved, setTimeSaved] = useState<TimeSaved | null>(null)
   const [view, setView] = useState<'weekly' | 'monthly'>('weekly')
   const [monthly, setMonthly] = useState<MonthlyTrend[]>([])
+  const [heatmapData, setHeatmapData] = useState<number[][] | undefined>()
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([getWeeklyTrends(), getMonthlyTrends(), getTimeSaved()])
-      .then(([w, m, ts]) => { setWeekly(w); setMonthly(m); setTimeSaved(ts) })
+    Promise.all([getWeeklyTrends(), getMonthlyTrends(), getTimeSaved(), getActivityHeatmap()])
+      .then(([w, m, ts, hm]) => { setWeekly(w); setMonthly(m); setTimeSaved(ts); setHeatmapData(hm) })
       .finally(() => setLoading(false))
   }, [])
 
@@ -66,7 +67,7 @@ export function Trends() {
 
       <PondChart data={trendData} />
 
-      <ActivityPond />
+      <ActivityPond data={heatmapData} />
 
       <WaveBarChart data={domainData} />
 
