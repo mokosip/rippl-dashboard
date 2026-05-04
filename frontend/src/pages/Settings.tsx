@@ -5,9 +5,11 @@ import type { CollectorInfo } from '../types'
 import { CollectorCard } from '../components/CollectorCard'
 import { useAuth } from '../hooks/useAuth'
 import { useExtension } from '../hooks/useExtension'
+import { useTheme } from '../context/ThemeContext'
 
 export function Settings() {
   const { user } = useAuth()
+  const { resolved, setTheme } = useTheme()
   const { status: extStatus, sendToken } = useExtension()
   const [collectors, setCollectors] = useState<CollectorInfo[]>([])
   const [loading, setLoading] = useState(true)
@@ -124,6 +126,21 @@ export function Settings() {
             )}
           </div>
         )}
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold text-fg mb-4">Appearance</h2>
+        <div className="flex gap-2">
+          {(['dark', 'light'] as const).map(t => (
+            <button
+              key={t}
+              onClick={() => setTheme(t)}
+              className={`px-4 py-2 rounded-xl text-sm capitalize ${resolved === t ? 'bg-accent text-fg font-medium' : 'text-fg-secondary bg-muted'}`}
+            >
+              {t === 'dark' ? '🌙 Dark' : '☀️ Light'}
+            </button>
+          ))}
+        </div>
       </section>
 
       <section>

@@ -1,14 +1,11 @@
 import { NavLink, Outlet, Navigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { useTheme } from '../context/ThemeContext'
 import { AmbientPond } from './AmbientPond'
 import { ClickRipple } from './ClickRipple'
 import { SyncIndicator } from './SyncIndicator'
 
 export function Layout() {
   const { user, loading, logout } = useAuth()
-  const { resolved, setTheme } = useTheme()
-  const toggleTheme = () => setTheme(resolved === 'dark' ? 'light' : 'dark')
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-page text-fg-muted">Loading...</div>
   if (!user) return <Navigate to="/login" replace />
@@ -41,9 +38,6 @@ export function Layout() {
             <NavLink to="/settings" className={({ isActive }) =>
               `text-sm ${isActive ? 'text-fg font-medium' : 'text-fg-secondary hover:text-fg'}`
             }>Settings</NavLink>
-            <button onClick={toggleTheme} className="text-fg-muted hover:text-fg text-sm" aria-label="Toggle theme">
-              {resolved === 'dark' ? '☀️' : '🌙'}
-            </button>
             <button onClick={logout} className="text-fg-muted hover:text-fg-secondary text-sm">
               Sign out
             </button>
