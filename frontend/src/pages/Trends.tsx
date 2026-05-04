@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { getWeeklyTrends, getMonthlyTrends, getTimeSaved } from '../api/trends'
 import type { WeeklyTrend, MonthlyTrend, TimeSaved } from '../types'
-import { TrendChart } from '../components/TrendChart'
+import { PondChart } from '../components/PondChart'
+import { ActivityPond } from '../components/ActivityPond'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { getDomain } from '../data/domains'
 
@@ -44,25 +45,42 @@ export function Trends() {
     return significant
   })()
 
+  const trendData = view === 'weekly' ? weekly : monthly.map(m => ({
+    week: m.month, domain: m.domain, totalSeconds: m.totalSeconds, totalSaved: m.totalSaved
+  }))
+
   return (
     <div className="space-y-8">
       <div className="flex gap-2">
-        <button onClick={() => setView('weekly')} className={`px-3 py-1 rounded-input text-sm ${view === 'weekly' ? 'bg-primary text-fg-on-primary' : 'bg-muted text-fg-secondary'}`}>Weekly</button>
-        <button onClick={() => setView('monthly')} className={`px-3 py-1 rounded-input text-sm ${view === 'monthly' ? 'bg-primary text-fg-on-primary' : 'bg-muted text-fg-secondary'}`}>Monthly</button>
+        {(['weekly', 'monthly'] as const).map(v => (
+          <button key={v} onClick={() => setView(v)}
+            className="px-4 py-1.5 rounded-full text-sm capitalize"
+            style={{
+              background: view === v ? 'rgba(92,122,82,0.15)' : 'transparent',
+              color: view === v ? '#c8dfc0' : '#6a9a5a',
+              border: `1px solid ${view === v ? 'rgba(92,122,82,0.4)' : 'rgba(92,122,82,0.2)'}`,
+            }}>
+            {v}
+          </button>
+        ))}
       </div>
 
-      <TrendChart data={view === 'weekly' ? weekly : monthly.map(m => ({ week: m.month, domain: m.domain, totalSeconds: m.totalSeconds, totalSaved: m.totalSaved }))} />
+      <PondChart data={trendData} />
+
+      <ActivityPond />
 
       {domainData.length > 0 && (
-        <div className="bg-card rounded-card shadow-sm p-6">
-          <h3 className="text-sm text-fg-muted uppercase tracking-wide mb-4">Time saved by tool</h3>
+        <div className="pond-card">
+          <p className="text-xs uppercase tracking-widest mb-4" style={{ color: '#5C7A52', letterSpacing: '1px' }}>
+            Time saved by tool
+          </p>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={domainData} layout="vertical">
-              <XAxis type="number" unit=" min" />
-              <YAxis type="category" dataKey="name" width={100} />
-              <Tooltip />
-              <Bar dataKey="value" name="Minutes saved">
-                {domainData.map((d, i) => <Cell key={i} fill={d.color} />)}
+              <XAxis type="number" unit=" min" tick={{ fill: '#5C7A52', fontSize: 11 }} axisLine={{ stroke: 'rgba(92,122,82,0.15)' }} />
+              <YAxis type="category" dataKey="name" width={100} tick={{ fill: '#6a9a5a', fontSize: 12 }} axisLine={false} />
+              <Tooltip contentStyle={{ background: 'rgba(15,26,15,0.9)', border: '1px solid rgba(92,122,82,0.3)', borderRadius: 12, color: '#c8dfc0' }} />
+              <Bar dataKey="value" name="Minutes saved" radius={[0, 4, 4, 0]}>
+                {domainData.map((d, i) => <Cell key={i} fill={d.color} opacity={0.8} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -70,21 +88,24 @@ export function Trends() {
       )}
 
       {activityData.length > 0 && (
-        <div className="bg-card rounded-card shadow-sm p-6">
-          <h3 className="text-sm text-fg-muted uppercase tracking-wide mb-4">What you use AI for</h3>
+        <div className="pond-card">
+          <p className="text-xs uppercase tracking-widest mb-4" style={{ color: '#5C7A52', letterSpacing: '1px' }}>
+            What you use AI for
+          </p>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
-              <Pie data={activityData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}>
-                {activityData.map((_, i) => <Cell key={i} fill={ACTIVITY_COLORS[i % ACTIVITY_COLORS.length]} />)}
+              <Pie data={activityData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90}
+                label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}>
+                {activityData.map((_, i) => <Cell key={i} fill={ACTIVITY_COLORS[i % ACTIVITY_COLORS.length]} opacity={0.8} />)}
               </Pie>
               <Tooltip content={({ active, payload }) => {
                 if (!active || !payload?.[0]) return null
                 const data = payload[0].payload
                 return (
-                  <div className="bg-card rounded-card shadow-sm p-2 text-sm border border-border">
+                  <div style={{ background: 'rgba(15,26,15,0.9)', border: '1px solid rgba(92,122,82,0.3)', borderRadius: 12, padding: '8px 12px', color: '#c8dfc0', fontSize: 13 }}>
                     <p className="font-medium">{data.name}: {data.value} min</p>
                     {data.breakdown?.map((b: { name: string; value: number }) => (
-                      <p key={b.name} className="text-fg-muted">{b.name}: {b.value} min</p>
+                      <p key={b.name} style={{ color: '#6a9a5a' }}>{b.name}: {b.value} min</p>
                     ))}
                   </div>
                 )

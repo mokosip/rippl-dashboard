@@ -69,16 +69,16 @@ export function Settings() {
             ))}
 
             {pendingToken && (
-              <div className="bg-accent p-4 rounded-card space-y-2">
+              <div className="p-4 rounded-2xl space-y-2" style={{ background: 'rgba(92,122,82,0.1)', border: '1px solid rgba(92,122,82,0.2)' }}>
                 <p className="text-sm font-medium text-fg">Extension API Token</p>
                 <p className="text-xs text-fg-muted">Copy this token — it won't be shown again.</p>
                 <div className="flex gap-2">
-                  <code className="flex-1 px-3 py-2 bg-card rounded-input text-xs text-fg-secondary break-all border border-default">
+                  <code className="flex-1 px-3 py-2 rounded-xl text-xs text-fg-secondary break-all" style={{ background: 'rgba(92,122,82,0.06)', border: '1px solid rgba(92,122,82,0.15)' }}>
                     {pendingToken}
                   </code>
                   <button
                     onClick={handleCopy}
-                    className="px-3 py-2 bg-primary text-fg-on-primary rounded-input text-xs hover:bg-primary-hover"
+                    className="px-3 py-2 bg-primary text-fg-on-primary rounded-xl text-xs hover:bg-primary-hover"
                   >
                     {copied ? 'Copied' : 'Copy'}
                   </button>
@@ -92,7 +92,7 @@ export function Settings() {
                   <button
                     onClick={handleConnect}
                     disabled={connecting}
-                    className="w-full py-3 bg-primary text-fg-on-primary rounded-card hover:bg-primary-hover disabled:opacity-50"
+                    className="w-full py-3 bg-primary text-fg-on-primary rounded-2xl hover:bg-primary-hover disabled:opacity-50"
                   >
                     {connecting ? 'Connecting...' : 'Connect Chrome Extension'}
                   </button>
@@ -101,7 +101,7 @@ export function Settings() {
                     <button
                       onClick={handleConnect}
                       disabled={connecting}
-                      className="w-full py-3 border-2 border-dashed border-default rounded-card text-fg-muted hover:border-ring hover:text-fg-active"
+                      className="w-full py-3 border-2 border-dashed rounded-2xl text-fg-muted hover:text-fg-active" style={{ borderColor: 'rgba(92,122,82,0.2)' }}
                     >
                       {connecting ? 'Connecting...' : '+ Connect Chrome Extension'}
                     </button>
@@ -130,15 +130,15 @@ export function Settings() {
         <h2 className="text-lg font-semibold text-fg mb-2">Account</h2>
         <p className="text-sm text-fg-muted mb-2">Signed in as {user?.email}</p>
         {showDeleteConfirm ? (
-          <div className="bg-error p-4 rounded-card space-y-3">
+          <div className="p-4 rounded-2xl space-y-3" style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)' }}>
             <p className="text-fg-error text-sm font-medium">
               This will permanently delete your account and all data. This cannot be undone.
             </p>
             <div className="flex gap-2">
-              <button onClick={handleDelete} className="px-4 py-2 bg-destructive text-fg-on-primary rounded-input text-sm hover:opacity-90">
+              <button onClick={handleDelete} className="px-4 py-2 rounded-xl text-sm hover:opacity-90" style={{ background: '#f87171', color: '#0f1a0f' }}>
                 Yes, delete everything
               </button>
-              <button onClick={() => setShowDeleteConfirm(false)} className="px-4 py-2 bg-muted rounded-input text-sm text-fg-secondary">
+              <button onClick={() => setShowDeleteConfirm(false)} className="px-4 py-2 rounded-xl text-sm text-fg-secondary bg-muted">
                 Cancel
               </button>
             </div>
