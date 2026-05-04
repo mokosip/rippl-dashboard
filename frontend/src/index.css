@@ -44,7 +44,7 @@
   --bg-tooltip: rgba(255,255,255,0.95);
   --border-tooltip: var(--line);
 
-  --chart-grid: rgba(31,28,22,0.06);
+  --chart-grid: rgba(31,28,22,0.15);
   --chart-wave-1: rgba(63,86,57,0.9);
   --chart-fill-1: rgba(63,86,57,0.08);
   --chart-wave-2: rgba(176,95,63,0.7);

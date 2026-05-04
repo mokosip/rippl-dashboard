@@ -6,9 +6,16 @@ interface SpiderData {
   value: number
 }
 
+interface SpiderTooltip {
+  index: number
+  x: number
+  y: number
+}
+
 export function RippleSpider({ data }: { data: SpiderData[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [hovered, setHovered] = useState<number>(-1)
+  const [tip, setTip] = useState<SpiderTooltip | null>(null)
   const { resolved } = useTheme()
 
   useEffect(() => {
@@ -97,9 +104,7 @@ export function RippleSpider({ data }: { data: SpiderData[] }) {
         ctx!.font = `${i === hovered ? '600 ' : ''}12px Inter, system-ui, sans-serif`
         ctx!.textAlign = align
         ctx!.textBaseline = 'middle'
-
-        const label = i === hovered ? `${data[i].name} — ${data[i].value} min` : data[i].name
-        ctx!.fillText(label, lp.x + offsetX, lp.y)
+        ctx!.fillText(data[i].name, lp.x + offsetX, lp.y)
       }
     }
 
@@ -172,9 +177,13 @@ export function RippleSpider({ data }: { data: SpiderData[] }) {
       const rect = canvas!.getBoundingClientRect()
       const mx = (e.clientX - rect.left) * (W / rect.width)
       const my = (e.clientY - rect.top) * (H / rect.height)
+      const scaleX = rect.width / W
+      const scaleY = rect.height / H
 
       let closest = -1
       let closestDist = 30
+      let closestPx = 0
+      let closestPy = 0
 
       for (let i = 0; i < n; i++) {
         const angle = (Math.PI * 2 * i) / n - Math.PI / 2
@@ -185,13 +194,26 @@ export function RippleSpider({ data }: { data: SpiderData[] }) {
         if (dist < closestDist) {
           closestDist = dist
           closest = i
+          closestPx = px * scaleX
+          closestPy = py * scaleY
         }
       }
       setHovered(closest)
+      if (closest >= 0) {
+        const parentRect = canvas!.closest('.pond-card')!.getBoundingClientRect()
+        setTip({
+          index: closest,
+          x: rect.left - parentRect.left + closestPx,
+          y: rect.top - parentRect.top + closestPy - 12,
+        })
+      } else {
+        setTip(null)
+      }
     }
 
     function handleMouseLeave() {
       setHovered(-1)
+      setTip(null)
     }
 
     canvas.addEventListener('mousemove', handleMouseMove)
@@ -205,13 +227,22 @@ export function RippleSpider({ data }: { data: SpiderData[] }) {
   if (data.length < 2) return null
 
   return (
-    <div className="pond-card">
+    <div className="pond-card" style={{ overflow: 'visible', position: 'relative' }}>
       <p className="text-xs uppercase tracking-widest mb-4 text-fg-muted" style={{ letterSpacing: '1px' }}>
         What you use AI for
       </p>
       <div className="flex justify-center">
         <canvas ref={canvasRef} width={500} height={400} style={{ width: '100%', maxWidth: 500, height: 'auto', aspectRatio: '500 / 400' }} />
       </div>
+      {tip && (
+        <div className="pond-tooltip visible" style={{
+          left: tip.x, top: tip.y, transform: 'translate(-50%, -100%)',
+          whiteSpace: 'nowrap',
+        }}>
+          <div className="text-xs text-fg-muted">{data[tip.index].name}</div>
+          <div className="text-sm font-semibold text-fg-accent">{data[tip.index].value} min</div>
+        </div>
+      )}
     </div>
   )
 }
