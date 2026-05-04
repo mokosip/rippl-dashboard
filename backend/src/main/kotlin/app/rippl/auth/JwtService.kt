@@ -2,6 +2,7 @@ package app.rippl.auth
 
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
+import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.time.Instant
@@ -17,6 +18,11 @@ class JwtService(
     @Value("\${app.jwt.session-expiry-days}") private val sessionExpiryDays: Int,
     @Value("\${app.jwt.magic-link-expiry-minutes}") private val magicLinkExpiryMinutes: Int
 ) {
+    @PostConstruct
+    fun validateSecret() {
+        require(secret.toByteArray().size >= 32) { "JWT_SECRET must be at least 32 bytes" }
+    }
+
     private val key get() = SecretKeySpec(secret.toByteArray(), "HmacSHA256")
 
     fun generateSessionToken(userId: UUID): String =

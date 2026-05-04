@@ -19,7 +19,7 @@ server:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:dev-secret-min-32-chars-long-for-hmac}
+    secret: ${JWT_SECRET}
     session-expiry-days: 7
     magic-link-expiry-minutes: 15
   resend:

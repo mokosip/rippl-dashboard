@@ -3,6 +3,7 @@ package app.rippl.auth
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+
 import java.util.UUID
 
 class JwtServiceTest {
@@ -14,7 +15,7 @@ class JwtServiceTest {
         jwtService = JwtService(
             secret = "test-secret-that-is-at-least-32-characters-long",
             sessionExpiryDays = 7,
-            magicLinkExpiryMinutes = 15
+            magicLinkExpiryMinutes = 15,
         )
     }
 
@@ -40,7 +41,7 @@ class JwtServiceTest {
         val jwtServiceShortExpiry = JwtService(
             secret = "test-secret-that-is-at-least-32-characters-long",
             sessionExpiryDays = 0,
-            magicLinkExpiryMinutes = 0
+            magicLinkExpiryMinutes = 0,
         )
         val userId = UUID.randomUUID()
         val token = jwtServiceShortExpiry.generateSessionToken(userId)
