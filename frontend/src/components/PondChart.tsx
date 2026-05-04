@@ -220,7 +220,7 @@ export function PondChart({ data, period = 'week' }: { data: WeeklyTrend[]; peri
         </p>
         <p className="text-3xl font-bold font-serif text-fg-accent">{totalMin} min</p>
         <p className="text-sm text-fg-secondary mt-1">
-          {weeks.length === 1 ? `this ${period}` : `over 2 ${period}s`} across {domains.length} {domains.length === 1 ? 'tool' : 'tools'}
+          across {domains.length} {domains.length === 1 ? 'tool' : 'tools'}
         </p>
         <div className="flex gap-3 mt-3">
           {domains.map((d, i) => (
