@@ -9,4 +9,5 @@ interface SessionRepository : JpaRepository<Session, String> {
     fun findByUserId(userId: UUID): List<Session>
     fun deleteByUserId(userId: UUID)
     fun countByUserId(userId: UUID): Long
+    fun findFirstByUserIdOrderBySyncedAtDesc(userId: UUID): Session?
 }

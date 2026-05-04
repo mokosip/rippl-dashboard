@@ -14,9 +14,15 @@ export function CollectorCard({ collector, onRemove }: Props) {
     <div className="flex items-center justify-between bg-card rounded-card shadow-sm p-4">
       <div>
         <p className="font-medium text-fg">{TYPE_LABELS[collector.type] ?? collector.type}</p>
-        <p className="text-sm text-fg-muted">
-          Connected {new Date(collector.linkedAt).toLocaleDateString()}
-        </p>
+        {collector.lastSyncAt ? (
+          <p className="text-sm text-green-600">
+            Connected — last sync at {new Date(collector.lastSyncAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </p>
+        ) : (
+          <p className="text-sm text-fg-muted">
+            Pending — waiting for first sync
+          </p>
+        )}
       </div>
       <button
         onClick={() => onRemove(collector.id)}

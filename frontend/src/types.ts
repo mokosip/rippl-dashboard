@@ -33,5 +33,6 @@ export interface CollectorInfo {
   type: string
   enabled: boolean
   linkedAt: string
+  lastSyncAt?: string
   token?: string
 }
