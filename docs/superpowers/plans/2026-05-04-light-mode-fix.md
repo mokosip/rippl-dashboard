@@ -4,9 +4,17 @@
 
 **Goal:** Make all pond design components respect light/dark mode by replacing hardcoded hex colors with Tailwind CSS token classes. Light mode should use the existing rippl-web warm palette; dark mode keeps the pond forest green palette.
 
-**Architecture:** The CSS token system already has both light (`:root`) and dark (`.dark`) variants. The problem is that pond components bypass tokens with inline `style={{ color: '#5C7A52' }}` etc. Fix: replace every inline color with the matching Tailwind class (`text-fg-muted`, `text-fg`, `bg-card`, etc.). For cases where no matching token exists (e.g. accent green for stat numbers), add new semantic tokens to both light and dark blocks. Canvas components need a different approach — they read colors from CSS custom properties at render time.
+**Architecture:** The CSS token system already has both light (`:root`) and dark (`.dark`) variants. The problem is that pond components bypass tokens with inline `style={{ color: '#5C7A52' }}` etc. Fix: replace every inline color with the matching Tailwind class (`text-fg-muted`, `text-fg`, `bg-card`, etc.). For cases where no matching token exists (e.g. accent green for stat numbers), add new semantic tokens to both light and dark blocks. Canvas components read CSS custom properties via `getComputedStyle` at render time.
 
 **Tech Stack:** Tailwind CSS v4, CSS custom properties, Canvas 2D API
+
+### Design Decisions (from grill session)
+
+1. **Ambient + click ripples**: keep in BOTH modes. Light mode uses lower opacity (0.02-0.04 vs 0.06-0.10).
+2. **Heatmap colors**: single `--heatmap-base: R,G,B` token shared between modes + `--heatmap-opacity-scale` (0.6 light, 0.8 dark). No separate RGB channel tokens per mode.
+3. **Theme toggle**: simple useEffect restart (add `resolved` to deps). No hot-swap complexity.
+4. **Light mode philosophy**: clean rippl-web look with subtle pond touches. Dark mode is "the pond." Different moods, not the same design in two colorways.
+5. **PondChart legend**: inline dot + label row below chart showing which color = which tool.
 
 ---
 
@@ -30,9 +38,11 @@ The pond design introduced visual roles that don't map to existing tokens. Add t
 | `--click-ripple` | `rgba(92,122,82,0.3)` | `rgba(92,122,82,0.5)` | Global click ripple |
 | `--sync-dot` | `var(--moss)` | `#5C7A52` | Sync indicator dot |
 | `--sync-pulse` | `rgba(92,122,82,0.3)` | `rgba(92,122,82,0.4)` | Sync indicator ring |
-| `--heatmap-fill` | `rgba(63,86,57,VAR)` | `rgba(92,122,82,VAR)` | Heatmap cell (alpha varies) |
-| `--heatmap-glow` | `rgba(63,86,57,VAR)` | `rgba(143,184,122,VAR)` | Heatmap cell glow |
-| `--ambient-ripple` | `rgba(92,122,82,VAR)` | `rgba(92,122,82,VAR)` | Ambient background ripple |
+| `--heatmap-base` | `63,86,57` | `92,122,82` | Heatmap cell RGB (alpha varies per value) |
+| `--heatmap-glow-base` | `63,86,57` | `143,184,122` | Heatmap cell glow RGB |
+| `--heatmap-opacity-scale` | `0.6` | `0.8` | Multiplier for heatmap cell alpha |
+| `--ambient-base` | `92,122,82` | `92,122,82` | Ambient ripple RGB |
+| `--ambient-opacity` | `0.03` | `0.07` | Ambient ripple base opacity (lower in light) |
 
 ---
 
@@ -87,15 +97,11 @@ After `--fg-active: var(--moss-dark);` add:
   --click-ripple: rgba(92,122,82,0.3);
   --sync-dot: var(--moss);
   --sync-pulse: rgba(92,122,82,0.3);
-  --heatmap-r: 63;
-  --heatmap-g: 86;
-  --heatmap-b: 57;
-  --heatmap-glow-r: 63;
-  --heatmap-glow-g: 86;
-  --heatmap-glow-b: 57;
-  --ambient-r: 92;
-  --ambient-g: 122;
-  --ambient-b: 82;
+  --heatmap-base: 63,86,57;
+  --heatmap-glow-base: 63,86,57;
+  --heatmap-opacity-scale: 0.6;
+  --ambient-base: 92,122,82;
+  --ambient-opacity: 0.03;
 ```
 
 - [ ] **Step 2: Add matching dark overrides to `.dark` block**
@@ -122,15 +128,11 @@ After `--ring: #5C7A52;` add:
   --click-ripple: rgba(92,122,82,0.5);
   --sync-dot: #5C7A52;
   --sync-pulse: rgba(92,122,82,0.4);
-  --heatmap-r: 92;
-  --heatmap-g: 122;
-  --heatmap-b: 82;
-  --heatmap-glow-r: 143;
-  --heatmap-glow-g: 184;
-  --heatmap-glow-b: 122;
-  --ambient-r: 92;
-  --ambient-g: 122;
-  --ambient-b: 82;
+  --heatmap-base: 92,122,82;
+  --heatmap-glow-base: 143,184,122;
+  --heatmap-opacity-scale: 0.8;
+  --ambient-base: 92,122,82;
+  --ambient-opacity: 0.07;
 ```
 
 - [ ] **Step 3: Expose new tokens in `@theme inline`**
@@ -369,13 +371,13 @@ Replace all hardcoded `'rgba(92,122,82,...)'` and `'#6a9a5a'` / `'#8fb87a'` with
 
 - [ ] **Step 5: AmbientPond.tsx**
 
-Read `--ambient-r`, `--ambient-g`, `--ambient-b` and construct rgba strings:
+Read `--ambient-base` and `--ambient-opacity`:
 
 ```typescript
-const r = styles.getPropertyValue('--ambient-r').trim()
-const g = styles.getPropertyValue('--ambient-g').trim()
-const b = styles.getPropertyValue('--ambient-b').trim()
-// Then: `rgba(${r}, ${g}, ${b}, ${alpha})`
+const ambientBase = styles.getPropertyValue('--ambient-base').trim()
+const ambientOpacity = parseFloat(styles.getPropertyValue('--ambient-opacity').trim())
+// Then in addRipple: opacity: ambientOpacity + Math.random() * 0.02
+// In draw: `rgba(${ambientBase}, ${alpha})`
 ```
 
 - [ ] **Step 6: ClickRipple.tsx**
@@ -386,12 +388,18 @@ Replace hardcoded `rgba(92,122,82,...)` with computed values from CSS vars.
 
 - [ ] **Step 7: ActivityPond.tsx**
 
-Read `--heatmap-r/g/b` and `--heatmap-glow-r/g/b` for cell fill and glow colors.
+Read `--heatmap-base`, `--heatmap-glow-base`, `--heatmap-opacity-scale`:
+
+```typescript
+const heatBase = styles.getPropertyValue('--heatmap-base').trim()
+const glowBase = styles.getPropertyValue('--heatmap-glow-base').trim()
+const opacityScale = parseFloat(styles.getPropertyValue('--heatmap-opacity-scale').trim())
+```
 
 Replace in the cell rendering:
 ```typescript
-backgroundColor: `rgba(${heatR},${heatG},${heatB},${val * 0.8})`
-boxShadow: val > 0.7 ? `0 0 ${val * 8}px rgba(${glowR},${glowG},${glowB},${val * 0.4})` : 'none'
+backgroundColor: `rgba(${heatBase},${val * opacityScale})`
+boxShadow: val > 0.7 ? `0 0 ${val * 8}px rgba(${glowBase},${val * 0.4})` : 'none'
 ```
 
 Replace label inline `style={{ color: '#5C7A52' }}` with `className="text-fg-muted"`.
@@ -463,6 +471,51 @@ Toggle between light and dark. All canvases should immediately re-render with ne
 ```bash
 git add frontend/src/components/PondChart.tsx frontend/src/components/WaveBarChart.tsx frontend/src/components/RippleSpider.tsx frontend/src/components/AmbientPond.tsx
 git commit -m "feat: re-read CSS tokens on theme toggle for canvas components"
+```
+
+---
+
+### Task 6: Add PondChart color legend
+
+**Files:**
+- Modify: `frontend/src/components/PondChart.tsx`
+
+- [ ] **Step 1: Add legend row below the week labels**
+
+After the week labels `<div>`, add a legend row showing colored dots + domain names:
+
+```tsx
+<div className="flex gap-4 pt-3 justify-center">
+  {domains.map((domain, i) => (
+    <div key={domain} className="flex items-center gap-1.5">
+      <div className="w-2.5 h-2.5 rounded-full" style={{
+        backgroundColor: colorPairs[i % colorPairs.length].stroke.replace(/[\d.]+\)$/, '1)')
+      }} />
+      <span className="text-xs text-fg-secondary">{getDomain(domain).name}</span>
+    </div>
+  ))}
+</div>
+```
+
+The `colorPairs` array is defined inside the useEffect and not accessible in JSX. Fix: move the color assignment to component scope (derive from domains array) or store in a ref.
+
+Simplest approach: define a `WAVE_COLORS` constant at module level:
+
+```typescript
+const WAVE_COLORS = ['#8fb87a', '#B05F3F', '#1F4E68', '#8B4830']
+```
+
+Use these for both the canvas rendering and the legend dots. In the useEffect, build `colorPairs` from these base colors. In the JSX legend, use `WAVE_COLORS[i]` for dot backgroundColor.
+
+- [ ] **Step 2: Verify legend shows correctly with multiple tools**
+
+Start dev server. Trends and Dashboard should both show the legend below the chart with one dot per tool.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add frontend/src/components/PondChart.tsx
+git commit -m "feat: add color legend to PondChart showing tool names"
 ```
 
 ---
