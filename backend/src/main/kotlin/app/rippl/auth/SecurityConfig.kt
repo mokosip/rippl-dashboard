@@ -22,7 +22,7 @@ class SecurityConfig(private val jwtAuthFilter: JwtAuthFilter) {
             .authorizeHttpRequests {
                 it.requestMatchers("/api/auth/magic-link", "/api/auth/verify").permitAll()
                 it.requestMatchers("/api/**").authenticated()
-                it.anyRequest().denyAll()
+                it.anyRequest().permitAll()
             }
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
             .build()
