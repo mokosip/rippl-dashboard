@@ -131,7 +131,6 @@ export function Settings() {
       <section>
         <h2 className="text-lg font-semibold text-fg mb-4">Appearance</h2>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-fg-secondary">☀️</span>
           <button
             onClick={() => setTheme(resolved === 'dark' ? 'light' : 'dark')}
             className="relative w-14 h-7 rounded-full transition-colors duration-300"
@@ -148,7 +147,6 @@ export function Settings() {
               {resolved === 'dark' ? '🌙' : '☀️'}
             </div>
           </button>
-          <span className="text-sm text-fg-secondary">🌙</span>
         </div>
       </section>
 
