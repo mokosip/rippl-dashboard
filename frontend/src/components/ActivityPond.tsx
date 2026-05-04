@@ -22,7 +22,7 @@ export function ActivityPond({ data }: ActivityPondProps) {
   return (
     <div className="pond-card">
       <p className="text-xs uppercase tracking-widest mb-4" style={{ color: '#5C7A52', letterSpacing: '1px' }}>
-        Weekly Activity Pattern
+        Time Saved by Day & Hour
       </p>
       <div className="flex">
         <div className="flex flex-col justify-between mr-2" style={{ gap: '3px' }}>
