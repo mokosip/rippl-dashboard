@@ -29,7 +29,7 @@ export function MirrorMomentCard({ moment, index = 0 }: { moment: MirrorMoment; 
         />
       </div>
       <span className="text-xl relative z-10">{TYPE_ICONS[moment.type] ?? '💡'}</span>
-      <p className="text-sm mt-2 leading-relaxed relative z-10" style={{ color: '#c8dfc0' }}>
+      <p className="text-sm mt-2 leading-relaxed relative z-10 text-fg">
         {moment.message}
       </p>
     </motion.div>

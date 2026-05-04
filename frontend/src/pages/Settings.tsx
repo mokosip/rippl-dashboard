@@ -69,11 +69,11 @@ export function Settings() {
             ))}
 
             {pendingToken && (
-              <div className="p-4 rounded-2xl space-y-2" style={{ background: 'rgba(92,122,82,0.1)', border: '1px solid rgba(92,122,82,0.2)' }}>
+              <div className="p-4 rounded-2xl space-y-2 bg-input border border-default">
                 <p className="text-sm font-medium text-fg">Extension API Token</p>
                 <p className="text-xs text-fg-muted">Copy this token — it won't be shown again.</p>
                 <div className="flex gap-2">
-                  <code className="flex-1 px-3 py-2 rounded-xl text-xs text-fg-secondary break-all" style={{ background: 'rgba(92,122,82,0.06)', border: '1px solid rgba(92,122,82,0.15)' }}>
+                  <code className="flex-1 px-3 py-2 rounded-xl text-xs text-fg-secondary break-all bg-card border border-default">
                     {pendingToken}
                   </code>
                   <button
@@ -101,7 +101,7 @@ export function Settings() {
                     <button
                       onClick={handleConnect}
                       disabled={connecting}
-                      className="w-full py-3 border-2 border-dashed rounded-2xl text-fg-muted hover:text-fg-active" style={{ borderColor: 'rgba(92,122,82,0.2)' }}
+                      className="w-full py-3 border-2 border-dashed border-default rounded-2xl text-fg-muted hover:text-fg-active"
                     >
                       {connecting ? 'Connecting...' : '+ Connect Chrome Extension'}
                     </button>
@@ -130,12 +130,12 @@ export function Settings() {
         <h2 className="text-lg font-semibold text-fg mb-2">Account</h2>
         <p className="text-sm text-fg-muted mb-2">Signed in as {user?.email}</p>
         {showDeleteConfirm ? (
-          <div className="p-4 rounded-2xl space-y-3" style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)' }}>
+          <div className="p-4 rounded-2xl space-y-3 bg-error border border-default">
             <p className="text-fg-error text-sm font-medium">
               This will permanently delete your account and all data. This cannot be undone.
             </p>
             <div className="flex gap-2">
-              <button onClick={handleDelete} className="px-4 py-2 rounded-xl text-sm hover:opacity-90" style={{ background: '#f87171', color: '#0f1a0f' }}>
+              <button onClick={handleDelete} className="px-4 py-2 rounded-xl text-sm hover:opacity-90 bg-destructive text-fg-on-primary">
                 Yes, delete everything
               </button>
               <button onClick={() => setShowDeleteConfirm(false)} className="px-4 py-2 rounded-xl text-sm text-fg-secondary bg-muted">

@@ -54,12 +54,11 @@ export function Trends() {
       <div className="flex gap-2">
         {(['weekly', 'monthly'] as const).map(v => (
           <button key={v} onClick={() => setView(v)}
-            className="px-4 py-1.5 rounded-full text-sm capitalize"
-            style={{
-              background: view === v ? 'rgba(92,122,82,0.15)' : 'transparent',
-              color: view === v ? '#c8dfc0' : '#6a9a5a',
-              border: `1px solid ${view === v ? 'rgba(92,122,82,0.4)' : 'rgba(92,122,82,0.2)'}`,
-            }}>
+            className={`px-4 py-1.5 rounded-full text-sm capitalize border ${
+              view === v
+                ? 'bg-accent text-fg border-default'
+                : 'text-fg-secondary border-subtle'
+            }`}>
             {v}
           </button>
         ))}

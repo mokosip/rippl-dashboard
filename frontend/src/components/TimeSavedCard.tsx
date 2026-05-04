@@ -7,8 +7,8 @@ export function TimeSavedCard({ data }: { data: TimeSaved }) {
 
   return (
     <div className="flex flex-col items-center py-8">
-      <p className="text-6xl font-bold font-serif" style={{ color: '#8fb87a' }}>{display}</p>
-      <p className="text-sm uppercase tracking-widest mt-1" style={{ color: '#5C7A52', letterSpacing: '2px' }}>
+      <p className="text-6xl font-bold font-serif text-fg-accent">{display}</p>
+      <p className="text-sm uppercase tracking-widest mt-1 text-fg-muted" style={{ letterSpacing: '2px' }}>
         Time Saved
       </p>
     </div>

@@ -26,7 +26,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #5C7A52;
+  background: var(--sync-dot);
   position: relative;
 }
 
@@ -35,7 +35,7 @@
   position: absolute;
   inset: -4px;
   border-radius: 50%;
-  border: 1px solid rgba(92,122,82,0.4);
+  border: 1px solid var(--sync-pulse);
   animation: syncPulse 2s ease-out infinite;
 }
 
