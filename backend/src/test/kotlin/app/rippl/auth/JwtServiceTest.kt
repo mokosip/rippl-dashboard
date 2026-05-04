@@ -31,7 +31,8 @@ class JwtServiceTest {
         val userId = UUID.randomUUID()
         val token = jwtService.generateSessionToken(userId)
         val result = jwtService.validateSessionToken(token)
-        assertEquals(userId, result)
+        assertEquals(userId, result?.userId)
+        assertNotNull(result?.issuedAt)
     }
 
     @Test

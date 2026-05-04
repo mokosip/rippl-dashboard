@@ -4,9 +4,12 @@ import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import java.time.Instant
 import java.util.Date
 import java.util.UUID
 import javax.crypto.spec.SecretKeySpec
+
+data class SessionClaims(val userId: UUID, val issuedAt: Instant)
 
 @Service
 class JwtService(
@@ -24,10 +27,13 @@ class JwtService(
             .signWith(key)
             .compact()
 
-    fun validateSessionToken(token: String): UUID? =
+    fun validateSessionToken(token: String): SessionClaims? =
         try {
             val claims = parse(token)
-            UUID.fromString(claims.subject)
+            SessionClaims(
+                userId = UUID.fromString(claims.subject),
+                issuedAt = claims.issuedAt.toInstant()
+            )
         } catch (_: Exception) {
             null
         }

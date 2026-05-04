@@ -1,6 +1,10 @@
 package app.rippl.auth
 
 import app.rippl.TestcontainersConfig
+import app.rippl.collectors.Collector
+import app.rippl.collectors.CollectorRepository
+import app.rippl.collectors.ExtensionTokenService
+import jakarta.servlet.http.Cookie
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
@@ -10,6 +14,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
+import java.time.Instant
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -19,6 +24,8 @@ class AuthControllerTest {
     @Autowired lateinit var mockMvc: MockMvc
     @Autowired lateinit var jwtService: JwtService
     @Autowired lateinit var userRepository: UserRepository
+    @Autowired lateinit var collectorRepository: CollectorRepository
+    @Autowired lateinit var extensionTokenService: ExtensionTokenService
 
     @Test
     fun `POST magic-link returns 200 for valid email`() {
@@ -71,6 +78,71 @@ class AuthControllerTest {
         }.andExpect {
             status { isOk() }
             cookie { maxAge("session", 0) }
+        }
+    }
+
+    @Test
+    fun `POST invalidate-sessions returns 200 and invalidates`() {
+        val user = userRepository.findByEmail("invalidate-test@example.com")
+            ?: userRepository.save(User(email = "invalidate-test@example.com"))
+        val token = jwtService.generateSessionToken(user.id!!)
+
+        mockMvc.post("/api/auth/invalidate-sessions") {
+            cookie(Cookie("session", token))
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.invalidated") { value(true) }
+        }
+    }
+
+    @Test
+    fun `session rejected after invalidation`() {
+        val user = userRepository.findByEmail("invalidated-session-test@example.com")
+            ?: userRepository.save(User(email = "invalidated-session-test@example.com"))
+        val token = jwtService.generateSessionToken(user.id!!)
+
+        user.sessionsInvalidatedAt = Instant.now()
+        userRepository.save(user)
+
+        mockMvc.get("/api/auth/me") {
+            cookie(Cookie("session", token))
+        }.andExpect {
+            status { isUnauthorized() }
+        }
+    }
+
+    @Test
+    fun `new session works after invalidation`() {
+        val user = userRepository.findByEmail("new-session-after-invalidation-test@example.com")
+            ?: userRepository.save(User(email = "new-session-after-invalidation-test@example.com"))
+
+        user.sessionsInvalidatedAt = Instant.now().minusSeconds(5)
+        userRepository.save(user)
+
+        val newToken = jwtService.generateSessionToken(user.id!!)
+
+        mockMvc.get("/api/auth/me") {
+            cookie(Cookie("session", newToken))
+        }.andExpect {
+            status { isOk() }
+        }
+    }
+
+    @Test
+    fun `bearer token unaffected by session invalidation`() {
+        val user = userRepository.findByEmail("bearer-invalidation-test@example.com")
+            ?: userRepository.save(User(email = "bearer-invalidation-test@example.com"))
+
+        val collector = collectorRepository.save(Collector(userId = user.id!!, type = "chrome_extension"))
+        val rawToken = extensionTokenService.createToken(collector.id!!, user.id!!)
+
+        user.sessionsInvalidatedAt = Instant.now()
+        userRepository.save(user)
+
+        mockMvc.get("/api/auth/me") {
+            header("Authorization", "Bearer $rawToken")
+        }.andExpect {
+            status { isOk() }
         }
     }
 }

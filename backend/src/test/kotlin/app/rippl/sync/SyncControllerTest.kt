@@ -1,10 +1,11 @@
 package app.rippl.sync
 
 import app.rippl.TestcontainersConfig
-import app.rippl.auth.JwtService
 import app.rippl.auth.User
 import app.rippl.auth.UserRepository
-import jakarta.servlet.http.Cookie
+import app.rippl.collectors.Collector
+import app.rippl.collectors.CollectorRepository
+import app.rippl.collectors.ExtensionTokenService
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -21,23 +22,27 @@ import org.springframework.test.web.servlet.post
 class SyncControllerTest {
 
     @Autowired lateinit var mockMvc: MockMvc
-    @Autowired lateinit var jwtService: JwtService
     @Autowired lateinit var userRepository: UserRepository
+    @Autowired lateinit var collectorRepository: CollectorRepository
+    @Autowired lateinit var extensionTokenService: ExtensionTokenService
 
-    private lateinit var sessionCookie: Cookie
+    private lateinit var bearerToken: String
 
     @BeforeEach
     fun setup() {
         val user = userRepository.findByEmail("sync-test@example.com")
             ?: userRepository.save(User(email = "sync-test@example.com"))
-        sessionCookie = Cookie("session", jwtService.generateSessionToken(user.id!!))
+        val collector = collectorRepository.findByUserId(user.id!!).firstOrNull()
+            ?: collectorRepository.save(Collector(userId = user.id!!, type = "chrome_extension"))
+        extensionTokenService.revokeByCollector(collector.id!!)
+        bearerToken = extensionTokenService.createToken(collector.id!!, user.id!!)
     }
 
     @Test
     fun `POST sync sessions returns accepted count`() {
         mockMvc.post("/api/sync/sessions") {
             contentType = MediaType.APPLICATION_JSON
-            cookie(sessionCookie)
+            header("Authorization", "Bearer $bearerToken")
             content = """
             {
               "sessions": [{
@@ -78,13 +83,13 @@ class SyncControllerTest {
 
         mockMvc.post("/api/sync/sessions") {
             contentType = MediaType.APPLICATION_JSON
-            cookie(sessionCookie)
+            header("Authorization", "Bearer $bearerToken")
             content = body
         }.andExpect { status { isOk() } }
 
         mockMvc.post("/api/sync/sessions") {
             contentType = MediaType.APPLICATION_JSON
-            cookie(sessionCookie)
+            header("Authorization", "Bearer $bearerToken")
             content = body
         }.andExpect {
             status { isOk() }

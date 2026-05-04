@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 import java.time.Duration
+import java.time.Instant
 import java.util.UUID
 
 data class MagicLinkRequest(val email: String?)
@@ -17,6 +18,7 @@ data class MagicLinkRequest(val email: String?)
 class AuthController(
     private val authService: AuthService,
     private val jwtService: JwtService,
+    private val userRepository: UserRepository,
     @Value("\${app.frontend-url}") private val frontendUrl: String
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -45,6 +47,7 @@ class AuthController(
         val sessionToken = jwtService.generateSessionToken(user.id!!)
         val cookie = ResponseCookie.from("session", sessionToken)
             .httpOnly(true)
+            .secure(true)
             .path("/")
             .maxAge(Duration.ofDays(7))
             .sameSite("Lax")
@@ -64,13 +67,26 @@ class AuthController(
         return ResponseEntity.ok(mapOf("id" to user.id!!, "email" to user.email))
     }
 
+    @PostMapping("/invalidate-sessions")
+    fun invalidateSessions(@AuthenticationPrincipal userId: UUID): ResponseEntity<Map<String, Any>> {
+        log.debug("Invalidating all sessions for user: {}", userId)
+        val user = authService.findById(userId)
+            ?: return ResponseEntity.status(401).build()
+        user.sessionsInvalidatedAt = Instant.now()
+        userRepository.save(user)
+        log.debug("Sessions invalidated for user: {}", userId)
+        return ResponseEntity.ok(mapOf("invalidated" to true))
+    }
+
     @PostMapping("/logout")
     fun logout(): ResponseEntity<Void> {
         log.debug("User logout")
         val cookie = ResponseCookie.from("session", "")
             .httpOnly(true)
+            .secure(true)
             .path("/")
             .maxAge(Duration.ZERO)
+            .sameSite("Lax")
             .build()
         return ResponseEntity.ok()
             .header(HttpHeaders.SET_COOKIE, cookie.toString())

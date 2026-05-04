@@ -15,5 +15,8 @@ class User(
     var id: UUID? = null,
 
     @Column(name = "created_at")
-    var createdAt: Instant = Instant.now()
+    var createdAt: Instant = Instant.now(),
+
+    @Column(name = "sessions_invalidated_at")
+    var sessionsInvalidatedAt: Instant? = null
 )

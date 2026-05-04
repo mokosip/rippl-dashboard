@@ -13,7 +13,8 @@ import org.springframework.web.filter.OncePerRequestFilter
 @Component
 class JwtAuthFilter(
     private val jwtService: JwtService,
-    private val extensionTokenService: ExtensionTokenService
+    private val extensionTokenService: ExtensionTokenService,
+    private val userRepository: UserRepository
 ) : OncePerRequestFilter() {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -52,12 +53,21 @@ class JwtAuthFilter(
             log.debug("No session cookie found for {} {}", request.method, request.requestURI)
             return null
         }
-        val userId = jwtService.validateSessionToken(token)
-        if (userId != null) {
-            log.debug("Session token valid, userId: {}", userId)
-        } else {
+        val claims = jwtService.validateSessionToken(token)
+        if (claims == null) {
             log.debug("Session token invalid for {} {}", request.method, request.requestURI)
+            return null
         }
-        return userId
+        val user = userRepository.findById(claims.userId).orElse(null)
+        if (user == null) {
+            log.debug("Session token references unknown userId: {}", claims.userId)
+            return null
+        }
+        if (user.sessionsInvalidatedAt != null && claims.issuedAt.isBefore(user.sessionsInvalidatedAt)) {
+            log.debug("Session token invalidated for userId: {}", claims.userId)
+            return null
+        }
+        log.debug("Session token valid, userId: {}", claims.userId)
+        return claims.userId
     }
 }

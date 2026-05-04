@@ -25,7 +25,7 @@ class AccountController(private val userRepository: UserRepository) {
         userRepository.deleteById(userId)
         log.debug("Account deleted for userId: {}", userId)
         val cookie = ResponseCookie.from("session", "")
-            .httpOnly(true).path("/").maxAge(Duration.ZERO).build()
+            .httpOnly(true).secure(true).path("/").maxAge(Duration.ZERO).sameSite("Lax").build()
         return ResponseEntity.ok()
             .header(HttpHeaders.SET_COOKIE, cookie.toString())
             .build()
