@@ -33,6 +33,10 @@ export function PondChart({ data }: { data: WeeklyTrend[] }) {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
+    const styles = getComputedStyle(document.documentElement)
+    const gridColor = styles.getPropertyValue('--chart-grid').trim()
+    const rippleColor = styles.getPropertyValue('--chart-ripple').trim()
+
     const W = canvas.width
     const H = canvas.height
     let time = 0
@@ -82,10 +86,10 @@ export function PondChart({ data }: { data: WeeklyTrend[] }) {
     }
 
     const colorPairs = [
-      { stroke: 'rgba(143,184,122,0.9)', fill: 'rgba(92,122,82,0.12)' },
-      { stroke: 'rgba(176,95,63,0.7)', fill: 'rgba(176,95,63,0.08)' },
-      { stroke: 'rgba(31,78,104,0.7)', fill: 'rgba(31,78,104,0.08)' },
-      { stroke: 'rgba(139,72,48,0.7)', fill: 'rgba(139,72,48,0.08)' },
+      { stroke: styles.getPropertyValue('--chart-wave-1').trim(), fill: styles.getPropertyValue('--chart-fill-1').trim() },
+      { stroke: styles.getPropertyValue('--chart-wave-2').trim(), fill: styles.getPropertyValue('--chart-fill-2').trim() },
+      { stroke: styles.getPropertyValue('--chart-wave-3').trim(), fill: styles.getPropertyValue('--chart-fill-3').trim() },
+      { stroke: styles.getPropertyValue('--chart-wave-2').trim(), fill: styles.getPropertyValue('--chart-fill-2').trim() },
     ]
     const domainColors: Record<string, { stroke: string; fill: string }> = {}
     domains.forEach((d, i) => { domainColors[d] = colorPairs[i % colorPairs.length] })
@@ -94,7 +98,7 @@ export function PondChart({ data }: { data: WeeklyTrend[] }) {
       time++
       ctx!.clearRect(0, 0, W, H)
 
-      ctx!.strokeStyle = 'rgba(92,122,82,0.08)'
+      ctx!.strokeStyle = gridColor
       ctx!.lineWidth = 0.5
       for (let i = 0; i <= 4; i++) {
         const y = 20 + i * (H - 40) / 4
@@ -115,9 +119,11 @@ export function PondChart({ data }: { data: WeeklyTrend[] }) {
         if (rip.opacity <= 0) { activeRipples.splice(i, 1); continue }
         ctx!.beginPath()
         ctx!.arc(rip.x, rip.y, rip.r, 0, Math.PI * 2)
-        ctx!.strokeStyle = `rgba(143, 184, 122, ${rip.opacity})`
+        ctx!.globalAlpha = rip.opacity
+        ctx!.strokeStyle = rippleColor
         ctx!.lineWidth = 1
         ctx!.stroke()
+        ctx!.globalAlpha = 1
       }
 
       animId = requestAnimationFrame(animate)
@@ -192,17 +198,17 @@ export function PondChart({ data }: { data: WeeklyTrend[] }) {
 
   return (
     <div className="pond-card" ref={containerRef} style={{ overflow: 'visible' }}>
-      <p className="text-xs uppercase tracking-widest mb-4" style={{ color: '#5C7A52', letterSpacing: '1px' }}>
+      <p className="text-xs uppercase tracking-widest mb-4 text-fg-muted" style={{ letterSpacing: '1px' }}>
         AI Usage (minutes/week)
       </p>
       <div className="pond-surface">
         <canvas ref={canvasRef} width={936} height={280} />
         <div className={`pond-tooltip ${tooltip.visible ? 'visible' : ''}`}
           style={{ left: tooltip.x, top: tooltip.y }}>
-          <div className="text-xs mb-1" style={{ color: '#5C7A52' }}>Week of {tooltip.week}</div>
-          <div className="text-lg font-semibold" style={{ color: '#8fb87a' }}>{tooltip.total} min</div>
+          <div className="text-xs mb-1 text-fg-muted">Week of {tooltip.week}</div>
+          <div className="text-lg font-semibold text-fg-accent">{tooltip.total} min</div>
           {tooltip.breakdown.map(b => (
-            <div key={b.domain} className="text-xs mt-0.5" style={{ color: '#6a9a5a' }}>
+            <div key={b.domain} className="text-xs mt-0.5 text-fg-secondary">
               {b.domain}: {b.minutes}
             </div>
           ))}
@@ -210,7 +216,7 @@ export function PondChart({ data }: { data: WeeklyTrend[] }) {
       </div>
       <div className="flex justify-between pt-2">
         {weekLabels.map(w => (
-          <span key={w} className="text-xs" style={{ color: '#5C7A52' }}>
+          <span key={w} className="text-xs text-fg-muted">
             {new Date(w).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
           </span>
         ))}

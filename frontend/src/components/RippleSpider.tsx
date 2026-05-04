@@ -15,6 +15,16 @@ export function RippleSpider({ data }: { data: SpiderData[] }) {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
+    const styles = getComputedStyle(document.documentElement)
+    const chartGrid = styles.getPropertyValue('--chart-grid').trim()
+    const ambientBase = styles.getPropertyValue('--ambient-base').trim()
+    const fgSecondary = styles.getPropertyValue('--fg-secondary').trim()
+    const fgAccent = styles.getPropertyValue('--fg-accent').trim()
+    const chartFill1 = styles.getPropertyValue('--chart-fill-1').trim()
+    const chartWave1 = styles.getPropertyValue('--chart-wave-1').trim()
+    const chartDot = styles.getPropertyValue('--chart-dot').trim()
+    const chartRipple = styles.getPropertyValue('--chart-ripple').trim()
+
     const W = canvas.width
     const H = canvas.height
     const cx = W / 2
@@ -53,9 +63,11 @@ export function RippleSpider({ data }: { data: SpiderData[] }) {
           else ctx!.lineTo(px, py)
         }
         ctx!.closePath()
-        ctx!.strokeStyle = `rgba(92,122,82,${0.06 + l * 0.02})`
+        ctx!.globalAlpha = 0.06 + l * 0.02
+        ctx!.strokeStyle = `rgba(${ambientBase},1)`
         ctx!.lineWidth = 1
         ctx!.stroke()
+        ctx!.globalAlpha = 1
       }
     }
 
@@ -65,7 +77,7 @@ export function RippleSpider({ data }: { data: SpiderData[] }) {
         ctx!.beginPath()
         ctx!.moveTo(cx, cy)
         ctx!.lineTo(p.x, p.y)
-        ctx!.strokeStyle = 'rgba(92,122,82,0.1)'
+        ctx!.strokeStyle = chartGrid
         ctx!.lineWidth = 0.5
         ctx!.stroke()
 
@@ -79,7 +91,7 @@ export function RippleSpider({ data }: { data: SpiderData[] }) {
         if (cosA > 0.3) { align = 'left'; offsetX = 4 }
         else if (cosA < -0.3) { align = 'right'; offsetX = -4 }
 
-        ctx!.fillStyle = i === hovered ? '#8fb87a' : '#6a9a5a'
+        ctx!.fillStyle = i === hovered ? fgAccent : fgSecondary
         ctx!.font = `${i === hovered ? '600 ' : ''}12px Inter, system-ui, sans-serif`
         ctx!.textAlign = align
         ctx!.textBaseline = 'middle'
@@ -101,12 +113,12 @@ export function RippleSpider({ data }: { data: SpiderData[] }) {
       ctx!.closePath()
 
       const grad = ctx!.createRadialGradient(cx, cy, 0, cx, cy, maxR)
-      grad.addColorStop(0, 'rgba(92,122,82,0.2)')
-      grad.addColorStop(1, 'rgba(92,122,82,0.05)')
+      grad.addColorStop(0, chartFill1)
+      grad.addColorStop(1, `rgba(${ambientBase},0.05)`)
       ctx!.fillStyle = grad
       ctx!.fill()
 
-      ctx!.strokeStyle = 'rgba(143,184,122,0.6)'
+      ctx!.strokeStyle = chartWave1
       ctx!.lineWidth = 2
       ctx!.stroke()
 
@@ -116,13 +128,13 @@ export function RippleSpider({ data }: { data: SpiderData[] }) {
         const p = getPoint(i, r + wobble)
         ctx!.beginPath()
         ctx!.arc(p.x, p.y, i === hovered ? 5 : 3.5, 0, Math.PI * 2)
-        ctx!.fillStyle = i === hovered ? '#8fb87a' : 'rgba(143,184,122,0.9)'
+        ctx!.fillStyle = i === hovered ? fgAccent : chartDot
         ctx!.fill()
 
         if (i === hovered) {
           ctx!.beginPath()
           ctx!.arc(p.x, p.y, 10, 0, Math.PI * 2)
-          ctx!.strokeStyle = 'rgba(143,184,122,0.3)'
+          ctx!.strokeStyle = chartRipple
           ctx!.lineWidth = 1
           ctx!.stroke()
         }
@@ -192,7 +204,7 @@ export function RippleSpider({ data }: { data: SpiderData[] }) {
 
   return (
     <div className="pond-card">
-      <p className="text-xs uppercase tracking-widest mb-4" style={{ color: '#5C7A52', letterSpacing: '1px' }}>
+      <p className="text-xs uppercase tracking-widest mb-4 text-fg-muted" style={{ letterSpacing: '1px' }}>
         What you use AI for
       </p>
       <div className="flex justify-center">

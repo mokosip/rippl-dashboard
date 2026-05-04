@@ -31,6 +31,10 @@ export function WaveBarChart({ data }: { data: WaveBarData[] }) {
     canvas.style.height = displayH + 'px'
     ctx.scale(dpr, dpr)
 
+    const styles = getComputedStyle(document.documentElement)
+    const fgSecondary = styles.getPropertyValue('--fg-secondary').trim()
+    const fgMuted = styles.getPropertyValue('--fg-muted').trim()
+
     const W = displayW
     const maxVal = Math.max(...data.map(d => d.value))
     const labelW = 90
@@ -98,7 +102,7 @@ export function WaveBarChart({ data }: { data: WaveBarData[] }) {
         const y = 5 + i * rowH
         const barWidth = maxVal > 0 ? (d.value / maxVal) * chartW : 0
 
-        ctx!.fillStyle = '#6a9a5a'
+        ctx!.fillStyle = fgSecondary
         ctx!.font = '12px Inter, system-ui, sans-serif'
         ctx!.textAlign = 'right'
         ctx!.textBaseline = 'middle'
@@ -106,7 +110,7 @@ export function WaveBarChart({ data }: { data: WaveBarData[] }) {
 
         drawBar(y, barWidth, d.color, i * 3)
 
-        ctx!.fillStyle = '#5C7A52'
+        ctx!.fillStyle = fgMuted
         ctx!.font = '11px Inter, system-ui, sans-serif'
         ctx!.textAlign = 'left'
         ctx!.fillText(`${d.value} min`, labelW + barWidth + 8, y + barH / 2)
@@ -123,7 +127,7 @@ export function WaveBarChart({ data }: { data: WaveBarData[] }) {
 
   return (
     <div className="pond-card">
-      <p className="text-xs uppercase tracking-widest mb-4" style={{ color: '#5C7A52', letterSpacing: '1px' }}>
+      <p className="text-xs uppercase tracking-widest mb-4 text-fg-muted" style={{ letterSpacing: '1px' }}>
         Time saved by tool
       </p>
       <div ref={containerRef} style={{ height: canvasH }}>

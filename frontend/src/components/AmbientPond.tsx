@@ -18,6 +18,10 @@ export function AmbientPond() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
+    const styles = getComputedStyle(document.documentElement)
+    const ambientBase = styles.getPropertyValue('--ambient-base').trim()
+    const ambientOpacity = parseFloat(styles.getPropertyValue('--ambient-opacity').trim())
+
     let w = 0
     let h = 0
     const ripples: Ripple[] = []
@@ -37,7 +41,7 @@ export function AmbientPond() {
         r: 0,
         maxR: 80 + Math.random() * 120,
         speed: 0.3 + Math.random() * 0.4,
-        opacity: 0.06 + Math.random() * 0.04,
+        opacity: ambientOpacity + Math.random() * (ambientOpacity * 0.6),
       })
     }
 
@@ -54,13 +58,13 @@ export function AmbientPond() {
         const alpha = rip.opacity * (1 - progress)
         ctx!.beginPath()
         ctx!.arc(rip.x, rip.y, rip.r, 0, Math.PI * 2)
-        ctx!.strokeStyle = `rgba(92, 122, 82, ${alpha})`
+        ctx!.strokeStyle = `rgba(${ambientBase}, ${alpha})`
         ctx!.lineWidth = 1
         ctx!.stroke()
         if (rip.r > 20) {
           ctx!.beginPath()
           ctx!.arc(rip.x, rip.y, rip.r * 0.6, 0, Math.PI * 2)
-          ctx!.strokeStyle = `rgba(92, 122, 82, ${alpha * 0.6})`
+          ctx!.strokeStyle = `rgba(${ambientBase}, ${alpha * 0.6})`
           ctx!.stroke()
         }
       }
