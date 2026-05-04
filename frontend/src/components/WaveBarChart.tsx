@@ -8,19 +8,34 @@ interface WaveBarData {
 
 export function WaveBarChart({ data }: { data: WaveBarData[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const barH = 28
+  const rowH = barH + 14
+  const canvasH = data.length * rowH + 10
 
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas || data.length === 0) return
+    const container = containerRef.current
+    if (!canvas || !container || data.length === 0) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    const W = canvas.width
-    const H = canvas.height
+    const dpr = window.devicePixelRatio || 1
+    const displayW = container.clientWidth
+    const displayH = canvasH
+
+    canvas.width = displayW * dpr
+    canvas.height = displayH * dpr
+    canvas.style.width = displayW + 'px'
+    canvas.style.height = displayH + 'px'
+    ctx.scale(dpr, dpr)
+
+    const W = displayW
     const maxVal = Math.max(...data.map(d => d.value))
-    const barH = Math.min(36, (H - 20) / data.length - 8)
-    const labelW = 100
-    const chartW = W - labelW - 60
+    const labelW = 90
+    const valueW = 60
+    const chartW = W - labelW - valueW
     let time = 0
     let animId = 0
 
@@ -32,6 +47,7 @@ export function WaveBarChart({ data }: { data: WaveBarData[] }) {
     }
 
     function drawBar(y: number, width: number, color: string, offset: number) {
+      if (width < 2) return
       const rgb = hexToRgb(color)
       const x0 = labelW
 
@@ -39,12 +55,6 @@ export function WaveBarChart({ data }: { data: WaveBarData[] }) {
       ctx!.beginPath()
       ctx!.roundRect(x0, y, width, barH, [0, barH / 2, barH / 2, 0])
       ctx!.clip()
-
-      const grad = ctx!.createLinearGradient(x0, 0, x0 + width, 0)
-      grad.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},0.6)`)
-      grad.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0.3)`)
-      ctx!.fillStyle = grad
-      ctx!.fillRect(x0, y, width, barH)
 
       ctx!.beginPath()
       const waveY = y + barH / 2
@@ -55,7 +65,7 @@ export function WaveBarChart({ data }: { data: WaveBarData[] }) {
         if (px === x0) ctx!.moveTo(px, wy)
         else ctx!.lineTo(px, wy)
       }
-      ctx!.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.5)`
+      ctx!.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.7)`
       ctx!.lineWidth = 1.5
       ctx!.stroke()
 
@@ -67,7 +77,7 @@ export function WaveBarChart({ data }: { data: WaveBarData[] }) {
         if (px === x0) ctx!.moveTo(px, wy)
         else ctx!.lineTo(px, wy)
       }
-      ctx!.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.25)`
+      ctx!.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.35)`
       ctx!.lineWidth = 1
       ctx!.stroke()
 
@@ -75,17 +85,17 @@ export function WaveBarChart({ data }: { data: WaveBarData[] }) {
 
       ctx!.beginPath()
       ctx!.roundRect(x0, y, width, barH, [0, barH / 2, barH / 2, 0])
-      ctx!.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.3)`
+      ctx!.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.25)`
       ctx!.lineWidth = 1
       ctx!.stroke()
     }
 
     function animate() {
       time++
-      ctx!.clearRect(0, 0, W, H)
+      ctx!.clearRect(0, 0, W, canvasH)
 
       data.forEach((d, i) => {
-        const y = 10 + i * (barH + 12)
+        const y = 5 + i * rowH
         const barWidth = maxVal > 0 ? (d.value / maxVal) * chartW : 0
 
         ctx!.fillStyle = '#6a9a5a'
@@ -111,15 +121,13 @@ export function WaveBarChart({ data }: { data: WaveBarData[] }) {
 
   if (data.length === 0) return null
 
-  const height = data.length * 48 + 20
-
   return (
     <div className="pond-card">
       <p className="text-xs uppercase tracking-widest mb-4" style={{ color: '#5C7A52', letterSpacing: '1px' }}>
         Time saved by tool
       </p>
-      <div style={{ height }}>
-        <canvas ref={canvasRef} width={700} height={height} style={{ width: '100%', height: '100%' }} />
+      <div ref={containerRef} style={{ height: canvasH }}>
+        <canvas ref={canvasRef} />
       </div>
     </div>
   )
