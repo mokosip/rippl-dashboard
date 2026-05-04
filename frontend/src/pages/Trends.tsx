@@ -1,22 +1,23 @@
 import { useEffect, useState } from 'react'
-import { getWeeklyTrends, getMonthlyTrends, getTimeSaved } from '../api/trends'
+import { getWeeklyTrends, getMonthlyTrends, getTimeSaved, getActivityHeatmap } from '../api/trends'
 import type { WeeklyTrend, MonthlyTrend, TimeSaved } from '../types'
-import { TrendChart } from '../components/TrendChart'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import { PondChart } from '../components/PondChart'
+import { ActivityPond } from '../components/ActivityPond'
+import { WaveBarChart } from '../components/WaveBarChart'
+import { RippleSpider } from '../components/RippleSpider'
 import { getDomain } from '../data/domains'
-
-const ACTIVITY_COLORS = ['#5C7A52', '#B05F3F', '#8B4830', '#1F4E68']
 
 export function Trends() {
   const [weekly, setWeekly] = useState<WeeklyTrend[]>([])
   const [timeSaved, setTimeSaved] = useState<TimeSaved | null>(null)
   const [view, setView] = useState<'weekly' | 'monthly'>('weekly')
   const [monthly, setMonthly] = useState<MonthlyTrend[]>([])
+  const [heatmapData, setHeatmapData] = useState<number[][] | undefined>()
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([getWeeklyTrends(), getMonthlyTrends(), getTimeSaved()])
-      .then(([w, m, ts]) => { setWeekly(w); setMonthly(m); setTimeSaved(ts) })
+    Promise.all([getWeeklyTrends(), getMonthlyTrends(), getTimeSaved(), getActivityHeatmap()])
+      .then(([w, m, ts, hm]) => { setWeekly(w); setMonthly(m); setTimeSaved(ts); setHeatmapData(hm) })
       .finally(() => setLoading(false))
   }, [])
 
@@ -44,55 +45,32 @@ export function Trends() {
     return significant
   })()
 
+  const trendData = view === 'weekly' ? weekly : monthly.map(m => ({
+    week: m.month, domain: m.domain, totalSeconds: m.totalSeconds, totalSaved: m.totalSaved
+  }))
+
   return (
     <div className="space-y-8">
       <div className="flex gap-2">
-        <button onClick={() => setView('weekly')} className={`px-3 py-1 rounded-input text-sm ${view === 'weekly' ? 'bg-primary text-fg-on-primary' : 'bg-muted text-fg-secondary'}`}>Weekly</button>
-        <button onClick={() => setView('monthly')} className={`px-3 py-1 rounded-input text-sm ${view === 'monthly' ? 'bg-primary text-fg-on-primary' : 'bg-muted text-fg-secondary'}`}>Monthly</button>
+        {(['weekly', 'monthly'] as const).map(v => (
+          <button key={v} onClick={() => setView(v)}
+            className={`px-4 py-1.5 rounded-full text-sm capitalize border ${
+              view === v
+                ? 'bg-accent text-fg border-default'
+                : 'text-fg-secondary border-subtle'
+            }`}>
+            {v}
+          </button>
+        ))}
       </div>
 
-      <TrendChart data={view === 'weekly' ? weekly : monthly.map(m => ({ week: m.month, domain: m.domain, totalSeconds: m.totalSeconds, totalSaved: m.totalSaved }))} />
+      <PondChart data={trendData} />
 
-      {domainData.length > 0 && (
-        <div className="bg-card rounded-card shadow-sm p-6">
-          <h3 className="text-sm text-fg-muted uppercase tracking-wide mb-4">Time saved by tool</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={domainData} layout="vertical">
-              <XAxis type="number" unit=" min" />
-              <YAxis type="category" dataKey="name" width={100} />
-              <Tooltip />
-              <Bar dataKey="value" name="Minutes saved">
-                {domainData.map((d, i) => <Cell key={i} fill={d.color} />)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+      <ActivityPond data={heatmapData} />
 
-      {activityData.length > 0 && (
-        <div className="bg-card rounded-card shadow-sm p-6">
-          <h3 className="text-sm text-fg-muted uppercase tracking-wide mb-4">What you use AI for</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie data={activityData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}>
-                {activityData.map((_, i) => <Cell key={i} fill={ACTIVITY_COLORS[i % ACTIVITY_COLORS.length]} />)}
-              </Pie>
-              <Tooltip content={({ active, payload }) => {
-                if (!active || !payload?.[0]) return null
-                const data = payload[0].payload
-                return (
-                  <div className="bg-card rounded-card shadow-sm p-2 text-sm border border-border">
-                    <p className="font-medium">{data.name}: {data.value} min</p>
-                    {data.breakdown?.map((b: { name: string; value: number }) => (
-                      <p key={b.name} className="text-fg-muted">{b.name}: {b.value} min</p>
-                    ))}
-                  </div>
-                )
-              }} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+      <WaveBarChart data={domainData} />
+
+      <RippleSpider data={activityData} />
     </div>
   )
 }

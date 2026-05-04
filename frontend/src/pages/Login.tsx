@@ -30,22 +30,31 @@ export function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-page">
-      <div className="max-w-sm w-full space-y-8 p-8 bg-card rounded-card shadow-card">
+      <div className="max-w-sm w-full space-y-8 p-8 pond-card">
         <div className="text-center">
+          <div className="flex justify-center mb-3">
+            <span style={{ color: 'var(--fg-accent)' }}>
+              <svg width="40" height="40" viewBox="0 0 32 32" fill="none">
+                <circle cx="16" cy="16" r="3.2" fill="currentColor"/>
+                <circle cx="16" cy="16" r="8.7" stroke="currentColor" strokeWidth="1.8" opacity=".55"/>
+                <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="1.5" opacity=".25"/>
+              </svg>
+            </span>
+          </div>
           <h1 className="text-3xl font-bold font-serif text-fg">rippl</h1>
-          <p className="mt-2 text-fg-secondary">Sign in to your dashboard</p>
+          <p className="mt-2 text-sm text-fg-secondary">Sign in to your dashboard</p>
         </div>
 
         {error && (
-          <div className="bg-error text-fg-error p-3 rounded-card text-sm">
+          <div className="p-3 rounded-xl text-sm bg-error text-fg-error">
             {error === 'invalid_token' ? 'That link has expired or already been used.' : error}
           </div>
         )}
 
         {sent ? (
-          <div className="bg-success text-fg-success p-4 rounded-card text-center">
+          <div className="p-4 rounded-xl text-center bg-input text-fg-accent">
             <p className="font-medium">Check your email</p>
-            <p className="text-sm mt-1">We sent a sign-in link to {email}</p>
+            <p className="text-sm mt-1 text-fg-secondary">We sent a sign-in link to {email}</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -55,12 +64,12 @@ export function Login() {
               onChange={e => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              className="w-full px-3 py-2 border border-default rounded-input bg-input text-fg focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-3 py-2 rounded-xl text-sm text-fg focus:outline-none focus:ring-2 focus:ring-ring bg-input border border-default"
             />
             <button
               type="submit"
               disabled={submitting}
-              className="w-full py-2 bg-primary text-fg-on-primary rounded-input hover:bg-primary-hover disabled:opacity-50"
+              className="w-full py-2 rounded-xl text-sm disabled:opacity-50 bg-primary text-fg-on-primary hover:bg-primary-hover"
             >
               {submitting ? 'Sending...' : 'Send magic link'}
             </button>

@@ -18,8 +18,8 @@ export function Mirror() {
   if (moments.length === 0) {
     return (
       <div className="text-center py-16">
-        <p className="text-fg-muted">Not enough data yet for mirror moments.</p>
-        <p className="text-fg-muted text-sm mt-2">Keep using AI tools and check back soon.</p>
+        <p className="text-fg-secondary">Not enough data yet for mirror moments.</p>
+        <p className="text-sm mt-2 text-fg-muted">Keep using AI tools and check back soon.</p>
       </div>
     )
   }
@@ -28,7 +28,7 @@ export function Mirror() {
     <div>
       <h2 className="text-lg font-semibold text-fg mb-6">Mirror Moments</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {moments.map((m, i) => <MirrorMomentCard key={i} moment={m} />)}
+        {moments.map((m, i) => <MirrorMomentCard key={i} moment={m} index={i} />)}
       </div>
     </div>
   )

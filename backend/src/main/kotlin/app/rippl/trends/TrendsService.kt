@@ -93,4 +93,25 @@ class TrendsService(private val jdbc: JdbcTemplate) {
         log.debug("Time-saved for userId: {} — total: {}min, domains: {}, activities: {}", userId, total, byDomain.size, byActivity.size)
         return TimeSaved(total, byDomain, byActivity)
     }
+
+    fun activityHeatmap(userId: UUID): List<List<Int>> {
+        val rows = jdbc.query(
+            """
+            SELECT EXTRACT(DOW FROM date)::int AS dow,
+                   EXTRACT(HOUR FROM to_timestamp(started_at / 1000))::int AS hour,
+                   COALESCE(SUM(time_saved_minutes), 0)::int AS saved
+            FROM sessions WHERE user_id = ? AND time_saved_minutes IS NOT NULL
+            GROUP BY dow, hour
+            """,
+            { rs, _ -> Triple(rs.getInt("dow"), rs.getInt("hour"), rs.getInt("saved")) },
+            userId
+        )
+        // PostgreSQL DOW: 0=Sunday. Remap to 0=Monday
+        val grid = Array(7) { IntArray(24) }
+        for ((dow, hour, saved) in rows) {
+            val mondayBased = if (dow == 0) 6 else dow - 1
+            grid[mondayBased][hour] = saved
+        }
+        return grid.map { it.toList() }
+    }
 }

@@ -38,6 +38,30 @@
   --fg-error: var(--destructive);
   --fg-success: #15803d;
   --fg-active: var(--moss-dark);
+  --fg-accent: var(--moss-dark);
+
+  --bg-nav-blur: rgba(251,248,241,0.85);
+  --bg-tooltip: rgba(255,255,255,0.95);
+  --border-tooltip: var(--line);
+
+  --chart-grid: rgba(31,28,22,0.15);
+  --chart-wave-1: rgba(63,86,57,0.9);
+  --chart-fill-1: rgba(63,86,57,0.08);
+  --chart-wave-2: rgba(176,95,63,0.7);
+  --chart-fill-2: rgba(176,95,63,0.06);
+  --chart-wave-3: rgba(31,78,104,0.7);
+  --chart-fill-3: rgba(31,78,104,0.06);
+  --chart-ripple: rgba(63,86,57,0.4);
+  --chart-dot: var(--moss-dark);
+
+  --click-ripple: rgba(92,122,82,0.3);
+  --sync-dot: var(--moss);
+  --sync-pulse: rgba(92,122,82,0.3);
+  --heatmap-base: 63,86,57;
+  --heatmap-glow-base: 63,86,57;
+  --heatmap-opacity-scale: 0.6;
+  --ambient-base: 92,122,82;
+  --ambient-opacity: 0.03;
 
   --border-default: var(--line);
   --border-subtle: var(--line-2);
@@ -62,29 +86,71 @@
 
 /* ── Layer 3: Dark Mode ── */
 .dark {
-  --bg-page: #1a1814;
-  --bg-card: #252118;
-  --bg-nav: #1f1c16;
-  --bg-input: #2a2620;
-  --bg-muted: #3a3530;
-  --bg-accent: #2d3a28;
-  --bg-error: #3b1c1c;
-  --bg-success: #1a2e1a;
+  --moss: #5C7A52;
+  --moss-dark: #3F5639;
+  --moss-tint: #8fb87a;
+  --terra: #B05F3F;
+  --terra-dark: #8B4830;
+  --cream: #c8dfc0;
+  --ink: #0f1a0f;
+  --ink-2: #6a9a5a;
+  --ink-3: #5C7A52;
+  --line: rgba(92,122,82,0.15);
+  --line-2: rgba(92,122,82,0.08);
 
-  --fg: var(--cream);
-  --fg-secondary: #b8b0a0;
-  --fg-muted: #9a9185;
-  --fg-on-primary: var(--cream);
+  --bg-page: #0f1a0f;
+  --bg-card: rgba(92,122,82,0.06);
+  --bg-nav: rgba(15,26,15,0.85);
+  --bg-input: rgba(92,122,82,0.1);
+  --bg-muted: rgba(92,122,82,0.08);
+  --bg-accent: rgba(92,122,82,0.15);
+  --bg-error: rgba(180,50,50,0.15);
+  --bg-success: rgba(92,122,82,0.15);
+
+  --fg: #c8dfc0;
+  --fg-secondary: #6a9a5a;
+  --fg-muted: #5C7A52;
+  --fg-on-primary: #0f1a0f;
   --fg-error: #f87171;
-  --fg-success: #86efac;
-  --fg-active: var(--moss-tint);
+  --fg-success: #8fb87a;
+  --fg-active: #8fb87a;
 
-  --border-default: #3a3530;
-  --border-subtle: #2a2620;
+  --border-default: rgba(92,122,82,0.15);
+  --border-subtle: rgba(92,122,82,0.08);
 
-  --primary: var(--moss);
-  --primary-hover: var(--moss-tint);
-  --ring: var(--moss);
+  --primary: #5C7A52;
+  --primary-hover: #8fb87a;
+  --secondary: #B05F3F;
+  --ring: #5C7A52;
+  --fg-accent: #8fb87a;
+
+  --bg-nav-blur: rgba(15,26,15,0.85);
+  --bg-tooltip: rgba(15,26,15,0.9);
+  --border-tooltip: rgba(92,122,82,0.3);
+
+  --chart-grid: rgba(92,122,82,0.08);
+  --chart-wave-1: rgba(143,184,122,0.9);
+  --chart-fill-1: rgba(92,122,82,0.12);
+  --chart-wave-2: rgba(176,95,63,0.7);
+  --chart-fill-2: rgba(176,95,63,0.08);
+  --chart-wave-3: rgba(31,78,104,0.7);
+  --chart-fill-3: rgba(31,78,104,0.08);
+  --chart-ripple: rgba(143,184,122,0.4);
+  --chart-dot: rgba(143,184,122,0.9);
+
+  --click-ripple: rgba(92,122,82,0.5);
+  --sync-dot: #5C7A52;
+  --sync-pulse: rgba(92,122,82,0.4);
+  --heatmap-base: 92,122,82;
+  --heatmap-glow-base: 143,184,122;
+  --heatmap-opacity-scale: 0.8;
+  --ambient-base: 92,122,82;
+  --ambient-opacity: 0.07;
+
+  --radius-card: 16px;
+  --radius-input: 12px;
+
+  --shadow-card: none;
 }
 
 /* ── Tailwind Exposure ── */
@@ -122,6 +188,7 @@
   --color-fg-error: var(--fg-error);
   --color-fg-success: var(--fg-success);
   --color-fg-active: var(--fg-active);
+  --color-fg-accent: var(--fg-accent);
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
   --color-secondary: var(--secondary);
