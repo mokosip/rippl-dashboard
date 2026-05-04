@@ -71,24 +71,21 @@ export function RippleSpider({ data }: { data: SpiderData[] }) {
 
         const labelR = maxR + 20
         const lp = getPoint(i, labelR)
+        const angle = getAngle(i)
+        const cosA = Math.cos(angle)
+
+        let align: CanvasTextAlign = 'center'
+        let offsetX = 0
+        if (cosA > 0.3) { align = 'left'; offsetX = 4 }
+        else if (cosA < -0.3) { align = 'right'; offsetX = -4 }
+
         ctx!.fillStyle = i === hovered ? '#8fb87a' : '#6a9a5a'
         ctx!.font = `${i === hovered ? '600 ' : ''}12px Inter, system-ui, sans-serif`
-        ctx!.textAlign = 'center'
+        ctx!.textAlign = align
         ctx!.textBaseline = 'middle'
 
-        const angle = getAngle(i)
-        let textX = lp.x
-        if (Math.cos(angle) > 0.3) textX += 4
-        else if (Math.cos(angle) < -0.3) textX -= 4
-
-        ctx!.fillText(data[i].name, textX, lp.y)
-
-        if (i === hovered) {
-          const valP = getPoint(i, labelR + 16)
-          ctx!.fillStyle = '#8fb87a'
-          ctx!.font = '600 11px Inter, system-ui, sans-serif'
-          ctx!.fillText(`${data[i].value} min`, valP.x, valP.y)
-        }
+        const label = i === hovered ? `${data[i].name} — ${data[i].value} min` : data[i].name
+        ctx!.fillText(label, lp.x + offsetX, lp.y)
       }
     }
 
