@@ -65,9 +65,9 @@ export function RippleSpider({ data }: { data: SpiderData[] }) {
           else ctx!.lineTo(px, py)
         }
         ctx!.closePath()
-        ctx!.globalAlpha = 0.06 + l * 0.02
-        ctx!.strokeStyle = `rgba(${ambientBase},1)`
+        ctx!.strokeStyle = chartGrid
         ctx!.lineWidth = 1
+        ctx!.globalAlpha = 0.5 + l * 0.15
         ctx!.stroke()
         ctx!.globalAlpha = 1
       }

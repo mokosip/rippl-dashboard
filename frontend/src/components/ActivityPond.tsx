@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useTheme } from '../context/ThemeContext'
 
 interface ActivityPondProps {
@@ -17,10 +17,15 @@ const MOCK_DATA = [
   [0,0,0,0,0,0,0,0,0,0,0.1,0.1,0,0,0.1,0,0,0,0,0,0,0,0,0],
 ]
 
+interface HoverState {
+  day: number; hour: number; rawVal: number; x: number; y: number
+}
+
 export function ActivityPond({ data }: ActivityPondProps) {
   const grid = data ?? MOCK_DATA
   const maxVal = Math.max(1, ...grid.flat())
   const normalized = grid.map(row => row.map(v => v / maxVal))
+  const [hover, setHover] = useState<HoverState | null>(null)
 
   const { resolved } = useTheme()
   const { heatBase, glowBase, opacityScale } = useMemo(() => {
@@ -33,7 +38,7 @@ export function ActivityPond({ data }: ActivityPondProps) {
   }, [resolved])
 
   return (
-    <div className="pond-card">
+    <div className="pond-card" style={{ overflow: 'visible', position: 'relative' }}>
       <p className="text-xs uppercase tracking-widest mb-4 text-fg-muted" style={{ letterSpacing: '1px' }}>
         Time Saved by Day & Hour
       </p>
@@ -44,13 +49,23 @@ export function ActivityPond({ data }: ActivityPondProps) {
           ))}
         </div>
         <div className="flex-1">
-          <div className="grid gap-[3px]" style={{ gridTemplateColumns: 'repeat(24, 1fr)' }}>
+          <div className="grid gap-[3px]" style={{ gridTemplateColumns: 'repeat(24, 1fr)' }}
+            onMouseLeave={() => setHover(null)}>
             {normalized.flatMap((dayRow, day) =>
               dayRow.map((val, hour) => (
                 <div
                   key={`${day}-${hour}`}
                   className="heatmap-cell"
-                  title={`${DAYS[day]} ${hour}:00 — ${Math.round(val * 60)} min`}
+                  onMouseEnter={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect()
+                    const parentRect = e.currentTarget.closest('.pond-card')!.getBoundingClientRect()
+                    setHover({
+                      day, hour,
+                      rawVal: grid[day][hour],
+                      x: rect.left - parentRect.left + rect.width / 2,
+                      y: rect.top - parentRect.top - 8,
+                    })
+                  }}
                   style={{
                     backgroundColor: `rgba(${heatBase},${val * opacityScale})`,
                     boxShadow: val > 0.7 ? `0 0 ${val * 8}px rgba(${glowBase},${val * 0.4})` : 'none',
@@ -66,6 +81,15 @@ export function ActivityPond({ data }: ActivityPondProps) {
           </div>
         </div>
       </div>
+      {hover && (
+        <div className="pond-tooltip visible" style={{
+          left: hover.x, top: hover.y, transform: 'translate(-50%, -100%)',
+          whiteSpace: 'nowrap',
+        }}>
+          <div className="text-xs text-fg-muted">{DAYS[hover.day]} {hover.hour}:00</div>
+          <div className="text-sm font-semibold text-fg-accent">{hover.rawVal} min saved</div>
+        </div>
+      )}
     </div>
   )
 }
