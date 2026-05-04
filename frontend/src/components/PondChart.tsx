@@ -38,16 +38,18 @@ export function PondChart({ data }: { data: WeeklyTrend[] }) {
     const styles = getComputedStyle(document.documentElement)
     const gridColor = styles.getPropertyValue('--chart-grid').trim()
     const rippleColor = styles.getPropertyValue('--chart-ripple').trim()
+    const fgMuted = styles.getPropertyValue('--fg-muted').trim()
 
     const W = canvas.width
     const H = canvas.height
+    const leftPad = 50
     let time = 0
     let animId = 0
     let lastHoveredWeek = -1
     const activeRipples: Ripple[] = []
 
     function getY(val: number) { return H - (val / maxVal) * (H - 40) - 20 }
-    function getX(i: number) { return 40 + (i / Math.max(weeks.length - 1, 1)) * (W - 80) }
+    function getX(i: number) { return leftPad + (i / Math.max(weeks.length - 1, 1)) * (W - leftPad - 40) }
 
     function drawWave(values: number[], color: string, fillColor: string, offset: number) {
       const points = values.map((v, i) => ({
@@ -104,7 +106,13 @@ export function PondChart({ data }: { data: WeeklyTrend[] }) {
       ctx!.lineWidth = 0.5
       for (let i = 0; i <= 4; i++) {
         const y = 20 + i * (H - 40) / 4
-        ctx!.beginPath(); ctx!.moveTo(40, y); ctx!.lineTo(W - 40, y); ctx!.stroke()
+        ctx!.beginPath(); ctx!.moveTo(leftPad, y); ctx!.lineTo(W - 40, y); ctx!.stroke()
+        const val = Math.round(maxVal * (1 - i / 4))
+        ctx!.fillStyle = fgMuted
+        ctx!.font = '10px Inter, system-ui, sans-serif'
+        ctx!.textAlign = 'right'
+        ctx!.textBaseline = 'middle'
+        ctx!.fillText(`${val}`, leftPad - 6, y)
       }
 
       for (let di = domains.length - 1; di >= 0; di--) {
