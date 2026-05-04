@@ -38,14 +38,18 @@ class InsightsService(private val jdbc: JdbcTemplate) {
         val (thisWeek, lastWeek) = rows.firstOrNull() ?: return null
         if (thisWeek == 0L) return null
 
-        val hours = "%.1f".format(thisWeek / 3600.0)
+        val timeStr = if (thisWeek < 3600) {
+            "${thisWeek / 60} minutes"
+        } else {
+            "%.1f hours".format(java.util.Locale.GERMAN, thisWeek / 3600.0)
+        }
         val comparison = when {
             lastWeek == 0L -> "your first tracked week"
             thisWeek > lastWeek -> "${(thisWeek - lastWeek) * 100 / lastWeek}% more than last week"
             thisWeek < lastWeek -> "${(lastWeek - thisWeek) * 100 / lastWeek}% less than last week"
             else -> "same as last week"
         }
-        return MirrorMoment("weekly_usage", "You used AI for $hours hours this week — $comparison.")
+        return MirrorMoment("weekly_usage", "You used AI for $timeStr this week — $comparison.")
     }
 
     private fun topTool(userId: UUID): MirrorMoment? {
@@ -77,8 +81,12 @@ class InsightsService(private val jdbc: JdbcTemplate) {
         )
         val (activity, saved) = rows.firstOrNull() ?: return null
         if (saved == 0) return null
-        val hours = "%.1f".format(saved / 60.0)
-        return MirrorMoment("time_saving_activity", "$activity is where AI saves you the most time — $hours hours freed this month.")
+        val timeStr = if (saved < 60) {
+            "$saved minutes"
+        } else {
+            "%.1f hours".format(java.util.Locale.GERMAN, saved / 60.0)
+        }
+        return MirrorMoment("time_saving_activity", "$activity is where AI saves you the most time — $timeStr freed this month.")
     }
 
     private fun busiestDay(userId: UUID): MirrorMoment? {

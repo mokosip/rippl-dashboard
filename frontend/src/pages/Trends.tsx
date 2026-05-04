@@ -28,10 +28,21 @@ export function Trends() {
     color: getDomain(domain).color,
   })) : []
 
-  const activityData = timeSaved ? Object.entries(timeSaved.byActivity).map(([activity, saved]) => ({
-    name: activity,
-    value: saved,
-  })) : []
+  const activityData = (() => {
+    if (!timeSaved) return []
+    const entries = Object.entries(timeSaved.byActivity).map(([activity, saved]) => ({
+      name: activity,
+      value: saved,
+      breakdown: undefined as { name: string; value: number }[] | undefined,
+    }))
+    const total = entries.reduce((sum, e) => sum + e.value, 0)
+    if (total === 0) return entries
+    const significant = entries.filter(e => (e.value / total) >= 0.01)
+    const others = entries.filter(e => (e.value / total) < 0.01)
+    const othersValue = others.reduce((sum, e) => sum + e.value, 0)
+    if (othersValue > 0) significant.push({ name: 'Others', value: othersValue, breakdown: others })
+    return significant
+  })()
 
   return (
     <div className="space-y-8">
@@ -66,7 +77,18 @@ export function Trends() {
               <Pie data={activityData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}>
                 {activityData.map((_, i) => <Cell key={i} fill={ACTIVITY_COLORS[i % ACTIVITY_COLORS.length]} />)}
               </Pie>
-              <Tooltip />
+              <Tooltip content={({ active, payload }) => {
+                if (!active || !payload?.[0]) return null
+                const data = payload[0].payload
+                return (
+                  <div className="bg-card rounded-card shadow-sm p-2 text-sm border border-border">
+                    <p className="font-medium">{data.name}: {data.value} min</p>
+                    {data.breakdown?.map((b: { name: string; value: number }) => (
+                      <p key={b.name} className="text-fg-muted">{b.name}: {b.value} min</p>
+                    ))}
+                  </div>
+                )
+              }} />
             </PieChart>
           </ResponsiveContainer>
         </div>
