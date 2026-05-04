@@ -14,7 +14,7 @@ interface TooltipState {
   breakdown: { domain: string; minutes: number }[]
 }
 
-export function PondChart({ data, period = 'week' }: { data: WeeklyTrend[]; period?: 'week' | 'month' }) {
+export function PondChart({ data }: { data: WeeklyTrend[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [tooltip, setTooltip] = useState<TooltipState>({ visible: false, x: 0, y: 0, week: '', total: 0, breakdown: [] })
