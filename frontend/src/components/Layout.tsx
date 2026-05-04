@@ -15,7 +15,14 @@ export function Layout() {
     <div className="min-h-screen bg-page">
       <nav className="bg-nav border-b border-default">
         <div className="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
-          <NavLink to="/" className="text-xl font-bold font-serif text-fg">rippl</NavLink>
+          <NavLink to="/" className="flex items-center gap-2 text-xl font-bold font-serif text-fg">
+            <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="16" r="3.2" fill="currentColor"/>
+              <circle cx="16" cy="16" r="8.7" stroke="currentColor" strokeWidth="1.8" opacity=".55"/>
+              <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="1.5" opacity=".25"/>
+            </svg>
+            rippl
+          </NavLink>
           <div className="flex gap-6 items-center">
             <NavLink to="/trends" className={({ isActive }) =>
               isActive ? 'text-fg-active font-medium' : 'text-fg-secondary hover:text-fg'
