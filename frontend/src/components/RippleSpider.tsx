@@ -19,7 +19,7 @@ export function RippleSpider({ data }: { data: SpiderData[] }) {
     const H = canvas.height
     const cx = W / 2
     const cy = H / 2
-    const maxR = Math.min(cx, cy) - 50
+    const maxR = Math.min(cx, cy) - 80
     const maxVal = Math.max(...data.map(d => d.value), 1)
     const n = data.length
     let time = 0
@@ -150,7 +150,7 @@ export function RippleSpider({ data }: { data: SpiderData[] }) {
     const H = canvas.height
     const cx = W / 2
     const cy = H / 2
-    const maxR = Math.min(cx, cy) - 50
+    const maxR = Math.min(cx, cy) - 80
     const maxVal = Math.max(...data.map(d => d.value), 1)
     const n = data.length
 
@@ -196,7 +196,7 @@ export function RippleSpider({ data }: { data: SpiderData[] }) {
         What you use AI for
       </p>
       <div className="flex justify-center">
-        <canvas ref={canvasRef} width={400} height={400} style={{ width: '100%', maxWidth: 400, height: 'auto', aspectRatio: '1' }} />
+        <canvas ref={canvasRef} width={500} height={400} style={{ width: '100%', maxWidth: 500, height: 'auto', aspectRatio: '500 / 400' }} />
       </div>
     </div>
   )
