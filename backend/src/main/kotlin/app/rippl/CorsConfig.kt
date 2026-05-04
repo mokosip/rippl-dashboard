@@ -10,25 +10,28 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 @Configuration
 class CorsConfig(
     @Value("\${app.frontend-url}") private val frontendUrl: String,
-    @Value("\${app.extension-id:}") private val extensionId: String,
 ) {
 
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val source = UrlBasedCorsConfigurationSource()
 
-        val origins = mutableListOf(frontendUrl)
-        if (extensionId.isNotBlank()) {
-            origins.add("chrome-extension://$extensionId")
+        val syncConfig = CorsConfiguration().apply {
+            allowedOrigins = listOf(frontendUrl)
+            allowedOriginPatterns = listOf("chrome-extension://*")
+            allowedMethods = listOf("POST")
+            allowedHeaders = listOf("Authorization", "Content-Type")
+            allowCredentials = false
         }
+        source.registerCorsConfiguration("/api/sync/**", syncConfig)
 
-        val config = CorsConfiguration().apply {
-            allowedOrigins = origins
+        val dashboardConfig = CorsConfiguration().apply {
+            allowedOrigins = listOf(frontendUrl)
             allowedMethods = listOf("GET", "POST", "DELETE")
             allowedHeaders = listOf("*")
             allowCredentials = true
         }
-        source.registerCorsConfiguration("/api/**", config)
+        source.registerCorsConfiguration("/api/**", dashboardConfig)
 
         return source
     }
