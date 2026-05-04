@@ -130,16 +130,25 @@ export function Settings() {
 
       <section>
         <h2 className="text-lg font-semibold text-fg mb-4">Appearance</h2>
-        <div className="flex gap-2">
-          {(['dark', 'light'] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => setTheme(t)}
-              className={`px-4 py-2 rounded-xl text-sm capitalize ${resolved === t ? 'bg-accent text-fg font-medium' : 'text-fg-secondary bg-muted'}`}
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-fg-secondary">☀️</span>
+          <button
+            onClick={() => setTheme(resolved === 'dark' ? 'light' : 'dark')}
+            className="relative w-14 h-7 rounded-full transition-colors duration-300"
+            style={{ background: resolved === 'dark' ? 'var(--primary)' : 'var(--border-default)' }}
+            aria-label="Toggle theme"
+          >
+            <div
+              className="absolute top-0.5 w-6 h-6 rounded-full shadow-sm transition-all duration-300 flex items-center justify-center text-xs"
+              style={{
+                left: resolved === 'dark' ? 'calc(100% - 1.625rem)' : '0.125rem',
+                background: 'var(--bg-card)',
+              }}
             >
-              {t === 'dark' ? '🌙 Dark' : '☀️ Light'}
-            </button>
-          ))}
+              {resolved === 'dark' ? '🌙' : '☀️'}
+            </div>
+          </button>
+          <span className="text-sm text-fg-secondary">🌙</span>
         </div>
       </section>
 
