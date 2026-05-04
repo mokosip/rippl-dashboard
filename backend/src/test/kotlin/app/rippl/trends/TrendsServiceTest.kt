@@ -66,6 +66,21 @@ class TrendsServiceTest {
     }
 
     @Test
+    fun `timeSaved unnests multi-activity sessions`() {
+        sessionRepository.deleteAll()
+        val user = userRepository.findByEmail("trends-test@example.com")!!
+        sessionRepository.saveAll(listOf(
+            Session("ts-multi-1", user.id!!, "claude.ai", 1000, 2000, 600, LocalDate.of(2026, 5, 1),
+                "coding, review", 60, 30),
+            Session("ts-multi-2", user.id!!, "claude.ai", 3000, 4000, 300, LocalDate.of(2026, 5, 1),
+                "review", 30, 10)
+        ))
+        val result = trendsService.timeSaved(user.id!!)
+        assertEquals(30, result.byActivity["coding"])
+        assertEquals(40, result.byActivity["review"]) // 30 + 10
+    }
+
+    @Test
     fun `timeSaved returns zeros for user with no sessions`() {
         val emptyUser = userRepository.save(User(email = "empty-trends@example.com"))
         val result = trendsService.timeSaved(emptyUser.id!!)

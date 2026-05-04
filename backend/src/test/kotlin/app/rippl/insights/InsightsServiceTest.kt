@@ -73,6 +73,22 @@ class InsightsServiceTest {
     }
 
     @Test
+    fun `time saving activity unnests multi-activity sessions`() {
+        val multiUser = userRepository.save(User(email = "multi-activity@example.com"))
+        val today = LocalDate.now()
+        sessionRepository.saveAll(listOf(
+            Session("multi-1", multiUser.id!!, "claude.ai", 1000, 2000, 600, today,
+                "coding, review", 60, 40),
+            Session("multi-2", multiUser.id!!, "claude.ai", 3000, 4000, 300, today,
+                "review", 30, 20)
+        ))
+        val moments = insightsService.mirrorMoments(multiUser.id!!)
+        val activityMoment = moments.find { it.type == "time_saving_activity" }
+        assertNotNull(activityMoment)
+        assertTrue(activityMoment!!.message.contains("review"))
+    }
+
+    @Test
     fun `returns empty list for user with no sessions`() {
         val emptyUser = userRepository.save(User(email = "empty-insights@example.com"))
         val moments = insightsService.mirrorMoments(emptyUser.id!!)

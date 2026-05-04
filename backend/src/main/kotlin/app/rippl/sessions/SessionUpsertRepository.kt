@@ -28,7 +28,7 @@ class SessionUpsertRepository(private val jdbc: JdbcTemplate) {
                 """,
                 Boolean::class.java,
                 s.id, userId, s.domain, s.startedAt, s.endedAt, s.activeSeconds,
-                s.date, s.activityType, s.estimatedWithoutMinutes, s.timeSavedMinutes, s.logged ?: false
+                s.date, s.activityType?.joinToString(", "), s.estimatedWithoutMinutes, s.timeSavedMinutes, s.logged ?: false
             )
             if (inserted == true) accepted++ else duplicates++
         }

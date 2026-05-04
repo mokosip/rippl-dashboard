@@ -71,12 +71,13 @@ class InsightsService(private val jdbc: JdbcTemplate) {
     private fun timeSavingActivity(userId: UUID): MirrorMoment? {
         val rows = jdbc.query(
             """
-            SELECT activity_type, COALESCE(SUM(time_saved_minutes), 0)::int AS saved
+            SELECT unnest(string_to_array(activity_type, ', ')) AS activity,
+                   COALESCE(SUM(time_saved_minutes), 0)::int AS saved
             FROM sessions WHERE user_id = ? AND activity_type IS NOT NULL
               AND date >= date_trunc('month', CURRENT_DATE)
-            GROUP BY activity_type ORDER BY saved DESC LIMIT 1
+            GROUP BY activity ORDER BY saved DESC LIMIT 1
             """,
-            { rs, _ -> rs.getString("activity_type") to rs.getInt("saved") },
+            { rs, _ -> rs.getString("activity") to rs.getInt("saved") },
             userId
         )
         val (activity, saved) = rows.firstOrNull() ?: return null

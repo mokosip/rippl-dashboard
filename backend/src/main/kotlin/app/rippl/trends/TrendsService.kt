@@ -81,11 +81,12 @@ class TrendsService(private val jdbc: JdbcTemplate) {
 
         val byActivity = jdbc.query(
             """
-            SELECT activity_type, COALESCE(SUM(time_saved_minutes), 0)::int AS saved
+            SELECT unnest(string_to_array(activity_type, ', ')) AS activity,
+                   COALESCE(SUM(time_saved_minutes), 0)::int AS saved
             FROM sessions WHERE user_id = ? AND activity_type IS NOT NULL AND time_saved_minutes IS NOT NULL
-            GROUP BY activity_type ORDER BY saved DESC
+            GROUP BY activity ORDER BY saved DESC
             """,
-            { rs, _ -> rs.getString("activity_type") to rs.getInt("saved") },
+            { rs, _ -> rs.getString("activity") to rs.getInt("saved") },
             userId
         ).toMap()
 

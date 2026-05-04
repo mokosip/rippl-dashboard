@@ -20,6 +20,9 @@ class SyncController(
         @RequestBody request: SyncRequest
     ): ResponseEntity<Any> {
         log.debug("Sync request from userId: {}, session count: {}", userId, request.sessions.size)
+        if (request.sessions.isEmpty()) {
+            return ResponseEntity.ok(SyncResponse(0, 0, System.currentTimeMillis()))
+        }
         if (!rateLimiter.tryAcquire(userId)) {
             log.debug("Rate limit hit for userId: {}", userId)
             return ResponseEntity.status(429).body(mapOf("error" to "rate_limit_exceeded"))

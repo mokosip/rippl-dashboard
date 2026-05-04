@@ -99,6 +99,44 @@ class SyncControllerTest {
     }
 
     @Test
+    fun `POST sync sessions accepts activityType as array`() {
+        mockMvc.post("/api/sync/sessions") {
+            contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer $bearerToken")
+            content = """
+            {
+              "sessions": [{
+                "id": "sess-array-activity",
+                "domain": "claude.ai",
+                "startedAt": 1714700000000,
+                "endedAt": 1714700720000,
+                "activeSeconds": 680,
+                "date": "2026-05-03",
+                "activityType": ["coding", "review"],
+                "timeSavedMinutes": 15
+              }]
+            }
+            """
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.accepted") { value(1) }
+        }
+    }
+
+    @Test
+    fun `POST sync sessions returns 200 for empty sessions`() {
+        mockMvc.post("/api/sync/sessions") {
+            contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer $bearerToken")
+            content = """{"sessions": []}"""
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.accepted") { value(0) }
+            jsonPath("$.duplicates") { value(0) }
+        }
+    }
+
+    @Test
     fun `POST sync sessions returns 401 without auth`() {
         mockMvc.post("/api/sync/sessions") {
             contentType = MediaType.APPLICATION_JSON
