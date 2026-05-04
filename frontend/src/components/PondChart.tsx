@@ -138,9 +138,11 @@ export function PondChart({ data }: { data: WeeklyTrend[] }) {
         const week = weeks[closest]
         const breakdown = domains.map(d => ({ domain: getDomain(d).name, minutes: byWeek[week][d] ?? 0 })).filter(b => b.minutes > 0)
         const total = breakdown.reduce((s, b) => s + b.minutes, 0)
+        const rawX = e.clientX - rect.left + 16
+        const clampedX = Math.min(rawX, rect.width - 160)
         setTooltip({
           visible: true,
-          x: e.clientX - rect.left + 16,
+          x: clampedX,
           y: e.clientY - rect.top - 60,
           week: new Date(week).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
           total,
@@ -189,7 +191,7 @@ export function PondChart({ data }: { data: WeeklyTrend[] }) {
   const weekLabels = weeks.filter((_, i) => i % Math.max(1, Math.floor(weeks.length / 5)) === 0)
 
   return (
-    <div className="pond-card" ref={containerRef}>
+    <div className="pond-card" ref={containerRef} style={{ overflow: 'visible' }}>
       <p className="text-xs uppercase tracking-widest mb-4" style={{ color: '#5C7A52', letterSpacing: '1px' }}>
         AI Usage (minutes/week)
       </p>
