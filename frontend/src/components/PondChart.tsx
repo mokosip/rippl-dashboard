@@ -14,7 +14,7 @@ interface TooltipState {
   breakdown: { domain: string; minutes: number }[]
 }
 
-export function PondChart({ data }: { data: WeeklyTrend[] }) {
+export function PondChart({ data, period = 'week' }: { data: WeeklyTrend[]; period?: 'week' | 'month' }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [tooltip, setTooltip] = useState<TooltipState>({ visible: false, x: 0, y: 0, week: '', total: 0, breakdown: [] })
@@ -220,7 +220,7 @@ export function PondChart({ data }: { data: WeeklyTrend[] }) {
         </p>
         <p className="text-3xl font-bold font-serif text-fg-accent">{totalMin} min</p>
         <p className="text-sm text-fg-secondary mt-1">
-          {weeks.length === 1 ? 'this week' : 'over 2 weeks'} across {domains.length} {domains.length === 1 ? 'tool' : 'tools'}
+          {weeks.length === 1 ? `this ${period}` : `over 2 ${period}s`} across {domains.length} {domains.length === 1 ? 'tool' : 'tools'}
         </p>
         <div className="flex gap-3 mt-3">
           {domains.map((d, i) => (

@@ -64,7 +64,7 @@ export function Trends() {
         ))}
       </div>
 
-      <PondChart data={trendData} />
+      <PondChart data={trendData} period={view === 'monthly' ? 'month' : 'week'} />
 
       <ActivityPond data={heatmapData} />
 
