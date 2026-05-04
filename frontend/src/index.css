@@ -38,6 +38,30 @@
   --fg-error: var(--destructive);
   --fg-success: #15803d;
   --fg-active: var(--moss-dark);
+  --fg-accent: var(--moss-dark);
+
+  --bg-nav-blur: rgba(251,248,241,0.85);
+  --bg-tooltip: rgba(255,255,255,0.95);
+  --border-tooltip: var(--line);
+
+  --chart-grid: rgba(31,28,22,0.06);
+  --chart-wave-1: rgba(63,86,57,0.9);
+  --chart-fill-1: rgba(63,86,57,0.08);
+  --chart-wave-2: rgba(176,95,63,0.7);
+  --chart-fill-2: rgba(176,95,63,0.06);
+  --chart-wave-3: rgba(31,78,104,0.7);
+  --chart-fill-3: rgba(31,78,104,0.06);
+  --chart-ripple: rgba(63,86,57,0.4);
+  --chart-dot: var(--moss-dark);
+
+  --click-ripple: rgba(92,122,82,0.3);
+  --sync-dot: var(--moss);
+  --sync-pulse: rgba(92,122,82,0.3);
+  --heatmap-base: 63,86,57;
+  --heatmap-glow-base: 63,86,57;
+  --heatmap-opacity-scale: 0.6;
+  --ambient-base: 92,122,82;
+  --ambient-opacity: 0.03;
 
   --border-default: var(--line);
   --border-subtle: var(--line-2);
@@ -98,6 +122,30 @@
   --primary-hover: #8fb87a;
   --secondary: #B05F3F;
   --ring: #5C7A52;
+  --fg-accent: #8fb87a;
+
+  --bg-nav-blur: rgba(15,26,15,0.85);
+  --bg-tooltip: rgba(15,26,15,0.9);
+  --border-tooltip: rgba(92,122,82,0.3);
+
+  --chart-grid: rgba(92,122,82,0.08);
+  --chart-wave-1: rgba(143,184,122,0.9);
+  --chart-fill-1: rgba(92,122,82,0.12);
+  --chart-wave-2: rgba(176,95,63,0.7);
+  --chart-fill-2: rgba(176,95,63,0.08);
+  --chart-wave-3: rgba(31,78,104,0.7);
+  --chart-fill-3: rgba(31,78,104,0.08);
+  --chart-ripple: rgba(143,184,122,0.4);
+  --chart-dot: rgba(143,184,122,0.9);
+
+  --click-ripple: rgba(92,122,82,0.5);
+  --sync-dot: #5C7A52;
+  --sync-pulse: rgba(92,122,82,0.4);
+  --heatmap-base: 92,122,82;
+  --heatmap-glow-base: 143,184,122;
+  --heatmap-opacity-scale: 0.8;
+  --ambient-base: 92,122,82;
+  --ambient-opacity: 0.07;
 
   --radius-card: 16px;
   --radius-input: 12px;
@@ -140,6 +188,7 @@
   --color-fg-error: var(--fg-error);
   --color-fg-success: var(--fg-success);
   --color-fg-active: var(--fg-active);
+  --color-fg-accent: var(--fg-accent);
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
   --color-secondary: var(--secondary);
