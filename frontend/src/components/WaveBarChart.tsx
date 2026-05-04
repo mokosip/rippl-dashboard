@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useTheme } from '../context/ThemeContext'
 
 interface WaveBarData {
   name: string
@@ -9,6 +10,7 @@ interface WaveBarData {
 export function WaveBarChart({ data }: { data: WaveBarData[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const { resolved } = useTheme()
 
   const barH = 28
   const rowH = barH + 14
@@ -121,7 +123,7 @@ export function WaveBarChart({ data }: { data: WaveBarData[] }) {
     animate()
 
     return () => cancelAnimationFrame(animId)
-  }, [data])
+  }, [data, resolved])
 
   if (data.length === 0) return null
 

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useTheme } from '../context/ThemeContext'
 
 interface Ripple {
   x: number
@@ -11,6 +12,7 @@ interface Ripple {
 
 export function AmbientPond() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const { resolved } = useTheme()
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -77,7 +79,7 @@ export function AmbientPond() {
       clearInterval(interval)
       cancelAnimationFrame(animId)
     }
-  }, [])
+  }, [resolved])
 
   return (
     <canvas

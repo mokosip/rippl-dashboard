@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTheme } from '../context/ThemeContext'
 
 interface SpiderData {
   name: string
@@ -8,6 +9,7 @@ interface SpiderData {
 export function RippleSpider({ data }: { data: SpiderData[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [hovered, setHovered] = useState<number>(-1)
+  const { resolved } = useTheme()
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -152,7 +154,7 @@ export function RippleSpider({ data }: { data: SpiderData[] }) {
     animate()
 
     return () => cancelAnimationFrame(animId)
-  }, [data, hovered])
+  }, [data, hovered, resolved])
 
   useEffect(() => {
     const canvas = canvasRef.current

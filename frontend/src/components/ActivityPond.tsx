@@ -1,3 +1,6 @@
+import { useMemo } from 'react'
+import { useTheme } from '../context/ThemeContext'
+
 interface ActivityPondProps {
   data?: number[][]
 }
@@ -19,10 +22,15 @@ export function ActivityPond({ data }: ActivityPondProps) {
   const maxVal = Math.max(1, ...grid.flat())
   const normalized = grid.map(row => row.map(v => v / maxVal))
 
-  const styles = typeof window !== 'undefined' ? getComputedStyle(document.documentElement) : null
-  const heatBase = styles?.getPropertyValue('--heatmap-base').trim() ?? '92,122,82'
-  const glowBase = styles?.getPropertyValue('--heatmap-glow-base').trim() ?? '143,184,122'
-  const opacityScale = parseFloat(styles?.getPropertyValue('--heatmap-opacity-scale').trim() ?? '0.8')
+  const { resolved } = useTheme()
+  const { heatBase, glowBase, opacityScale } = useMemo(() => {
+    const styles = getComputedStyle(document.documentElement)
+    return {
+      heatBase: styles.getPropertyValue('--heatmap-base').trim() || '92,122,82',
+      glowBase: styles.getPropertyValue('--heatmap-glow-base').trim() || '143,184,122',
+      opacityScale: parseFloat(styles.getPropertyValue('--heatmap-opacity-scale').trim() || '0.8'),
+    }
+  }, [resolved])
 
   return (
     <div className="pond-card">

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { WeeklyTrend } from '../types'
 import { getDomain } from '../data/domains'
+import { useTheme } from '../context/ThemeContext'
 
 interface Ripple {
   x: number; y: number; r: number; opacity: number
@@ -17,6 +18,7 @@ export function PondChart({ data }: { data: WeeklyTrend[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [tooltip, setTooltip] = useState<TooltipState>({ visible: false, x: 0, y: 0, week: '', total: 0, breakdown: [] })
+  const { resolved } = useTheme()
 
   const domains = [...new Set(data.map(d => d.domain))]
   const byWeek: Record<string, Record<string, number>> = {}
@@ -190,7 +192,7 @@ export function PondChart({ data }: { data: WeeklyTrend[] }) {
       canvas.removeEventListener('mouseleave', handleMouseLeave)
       canvas.removeEventListener('click', handleClick)
     }
-  }, [data])
+  }, [data, resolved])
 
   if (weeks.length === 0) return null
 
@@ -219,6 +221,16 @@ export function PondChart({ data }: { data: WeeklyTrend[] }) {
           <span key={w} className="text-xs text-fg-muted">
             {new Date(w).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
           </span>
+        ))}
+      </div>
+      <div className="flex gap-4 pt-3 justify-center flex-wrap">
+        {domains.map((domain, i) => (
+          <div key={domain} className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full" style={{
+              backgroundColor: `var(--chart-wave-${(i % 3) + 1})`
+            }} />
+            <span className="text-xs text-fg-secondary">{getDomain(domain).name}</span>
+          </div>
         ))}
       </div>
     </div>
