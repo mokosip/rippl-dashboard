@@ -3,6 +3,7 @@ package app.rippl.collectors
 import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 import java.util.UUID
 
@@ -10,7 +11,10 @@ data class CreateCollectorRequest(val type: String)
 
 @RestController
 @RequestMapping("/api/collectors")
-class CollectorsController(private val collectorRepository: CollectorRepository) {
+class CollectorsController(
+    private val collectorRepository: CollectorRepository,
+    private val extensionTokenService: ExtensionTokenService
+) {
     private val log = LoggerFactory.getLogger(javaClass)
 
     @GetMapping
@@ -26,14 +30,17 @@ class CollectorsController(private val collectorRepository: CollectorRepository)
     ): Map<String, Any?> {
         log.debug("Creating collector type: {} for userId: {}", request.type, userId)
         val collector = collectorRepository.save(Collector(userId = userId, type = request.type))
-        return collector.toDto()
+        val token = extensionTokenService.createToken(collectorId = collector.id!!, userId = userId)
+        return collector.toDto() + ("token" to token)
     }
 
     @DeleteMapping("/{id}")
+    @Transactional
     fun delete(@AuthenticationPrincipal userId: UUID, @PathVariable id: UUID): ResponseEntity<Void> {
         log.debug("Deleting collector id: {} for userId: {}", id, userId)
         val collector = collectorRepository.findByIdAndUserId(id, userId)
             ?: return ResponseEntity.notFound().build()
+        extensionTokenService.revokeByCollector(collector.id!!)
         collectorRepository.delete(collector)
         return ResponseEntity.ok().build()
     }

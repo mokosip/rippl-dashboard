@@ -13,6 +13,7 @@ class SecurityConfig(private val jwtAuthFilter: JwtAuthFilter) {
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain =
         http
+            .cors {}
             .csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .exceptionHandling { it.authenticationEntryPoint { _, response, _ ->

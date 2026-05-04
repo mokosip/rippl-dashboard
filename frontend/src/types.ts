@@ -33,4 +33,5 @@ export interface CollectorInfo {
   type: string
   enabled: boolean
   linkedAt: string
+  token?: string
 }
