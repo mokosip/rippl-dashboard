@@ -204,6 +204,37 @@ export function PondChart({ data }: { data: WeeklyTrend[] }) {
 
   if (weeks.length === 0) return null
 
+  if (weeks.length < 3) {
+    const totalByDomain: Record<string, number> = {}
+    for (const w of weeks) {
+      for (const d of domains) {
+        totalByDomain[d] = (totalByDomain[d] ?? 0) + (byWeek[w][d] ?? 0)
+      }
+    }
+    const totalMin = Object.values(totalByDomain).reduce((s, v) => s + v, 0)
+
+    return (
+      <div className="pond-card">
+        <p className="text-xs uppercase tracking-widest mb-3 text-fg-muted" style={{ letterSpacing: '1px' }}>
+          AI Usage
+        </p>
+        <p className="text-3xl font-bold font-serif text-fg-accent">{totalMin} min</p>
+        <p className="text-sm text-fg-secondary mt-1">
+          {weeks.length === 1 ? 'this week' : 'over 2 weeks'} across {domains.length} {domains.length === 1 ? 'tool' : 'tools'}
+        </p>
+        <div className="flex gap-3 mt-3">
+          {domains.map((d, i) => (
+            <div key={d} className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: `var(--chart-wave-${(i % 3) + 1})` }} />
+              <span className="text-xs text-fg-secondary">{getDomain(d).name}: {totalByDomain[d] ?? 0} min</span>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-fg-muted mt-4">Trend chart appears after 3 weeks of data.</p>
+      </div>
+    )
+  }
+
   const weekLabels = weeks.filter((_, i) => i % Math.max(1, Math.floor(weeks.length / 5)) === 0)
 
   return (
