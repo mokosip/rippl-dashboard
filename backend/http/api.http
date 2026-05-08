@@ -1,6 +1,7 @@
 ### Variables
 @host = http://localhost:8080
 @email = moko@example.com
+@ingestToken = PASTE_INGEST_TOKEN_HERE
 
 ### ============================================
 ### AUTH
@@ -25,13 +26,23 @@ POST {{host}}/api/auth/logout
 Cookie: session={{verify.response.headers.Set-Cookie}}
 
 ### ============================================
-### SYNC
+### SYNC (Bearer ingest token required)
 ### ============================================
+
+### Create Chrome extension collector (returns token)
+# @name createCollector
+POST {{host}}/api/collectors
+Content-Type: application/json
+Cookie: session={{verify.response.headers.Set-Cookie}}
+
+{"type": "chrome_extension"}
+
+### Copy token from createCollector response body into @ingestToken above
 
 ### Sync sessions
 POST {{host}}/api/sync/sessions
 Content-Type: application/json
-Cookie: session={{verify.response.headers.Set-Cookie}}
+Authorization: Bearer {{ingestToken}}
 
 {
   "sessions": [
@@ -57,29 +68,6 @@ Cookie: session={{verify.response.headers.Set-Cookie}}
       "activityType": "writing",
       "estimatedWithoutMinutes": 15,
       "timeSavedMinutes": 10
-    },
-    {
-      "id": "sess-1714600000000-c5h0m4",
-      "domain": "claude.ai",
-      "startedAt": 1714600000000,
-      "endedAt": 1714602400000,
-      "activeSeconds": 2100,
-      "date": "2026-04-28",
-      "activityType": "coding",
-      "estimatedWithoutMinutes": 60,
-      "timeSavedMinutes": 40,
-      "logged": true
-    },
-    {
-      "id": "sess-1714500000000-d6i1n5",
-      "domain": "gemini.google.com",
-      "startedAt": 1714500000000,
-      "endedAt": 1714501200000,
-      "activeSeconds": 900,
-      "date": "2026-04-27",
-      "activityType": "research",
-      "estimatedWithoutMinutes": 20,
-      "timeSavedMinutes": 12
     }
   ]
 }
@@ -87,7 +75,7 @@ Cookie: session={{verify.response.headers.Set-Cookie}}
 ### Sync duplicate (should return accepted=0, duplicates=1)
 POST {{host}}/api/sync/sessions
 Content-Type: application/json
-Cookie: session={{verify.response.headers.Set-Cookie}}
+Authorization: Bearer {{ingestToken}}
 
 {
   "sessions": [
@@ -100,6 +88,128 @@ Cookie: session={{verify.response.headers.Set-Cookie}}
       "date": "2026-05-03"
     }
   ]
+}
+
+### ============================================
+### INGESTION V1 (Bearer ingest token required)
+### ============================================
+
+### Ingest activity session (first write => 201)
+# @name ingestSession
+POST {{host}}/v1/activity-sessions
+Content-Type: application/json
+Authorization: Bearer {{ingestToken}}
+
+{
+  "collector": {
+    "type": "chrome_extension",
+    "version": "1.0.0"
+  },
+  "source": {
+    "type": "browser",
+    "version": "126"
+  },
+  "session": {
+    "id": "sess-http-v1-dedupe",
+    "started_at": 1714700000000,
+    "ended_at": 1714700720000
+  },
+  "privacy": {
+    "content_collected": false,
+    "content_sent": false,
+    "prompt_collected": false,
+    "response_collected": false
+  },
+  "metrics": {
+    "sample_metric": 1,
+    "copy_events": 2
+  },
+  "context": {
+    "domain": "claude.ai",
+    "mode": "manual-http"
+  }
+}
+
+### Ingest duplicate (same session.id => 200 deduped=true)
+POST {{host}}/v1/activity-sessions
+Content-Type: application/json
+Authorization: Bearer {{ingestToken}}
+
+{
+  "collector": {
+    "type": "chrome_extension",
+    "version": "1.0.0"
+  },
+  "source": {
+    "type": "browser",
+    "version": "126"
+  },
+  "session": {
+    "id": "sess-http-v1-dedupe",
+    "started_at": 1714700000000,
+    "ended_at": 1714700720000
+  },
+  "privacy": {
+    "content_collected": false,
+    "content_sent": false,
+    "prompt_collected": false,
+    "response_collected": false
+  },
+  "metrics": {
+    "sample_metric": 999
+  },
+  "context": {
+    "domain": "claude.ai"
+  }
+}
+
+### Submit task_type feedback (upsert by type)
+POST {{host}}/v1/activity-sessions/{{ingestSession.response.body.$.session_id}}/feedback
+Content-Type: application/json
+Authorization: Bearer {{ingestToken}}
+
+{
+  "type": "task_type",
+  "value": "coding"
+}
+
+### Submit accuracy feedback (same session)
+POST {{host}}/v1/activity-sessions/{{ingestSession.response.body.$.session_id}}/feedback
+Content-Type: application/json
+Authorization: Bearer {{ingestToken}}
+
+{
+  "type": "accuracy",
+  "value": 0.9
+}
+
+### Ingest policy violation example (should return 400 policy_violation)
+POST {{host}}/v1/activity-sessions
+Content-Type: application/json
+Authorization: Bearer {{ingestToken}}
+
+{
+  "collector": {
+    "type": "chrome_extension",
+    "version": "1.0.0"
+  },
+  "source": {
+    "type": "browser",
+    "version": "126"
+  },
+  "session": {
+    "id": "sess-http-v1-policy",
+    "started_at": 1714700000000,
+    "ended_at": 1714700720000
+  },
+  "privacy": {
+    "content_collected": true,
+    "content_sent": false,
+    "prompt_collected": false,
+    "response_collected": false
+  },
+  "metrics": {},
+  "context": {}
 }
 
 ### ============================================
