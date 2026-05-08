@@ -145,6 +145,14 @@ class IngestionController(
                     .body(problemBody(HttpStatus.TOO_MANY_REQUESTS, "Too Many Requests", "Rate limit exceeded", "rate_limited"))
             }
 
+            if (rawBody.toByteArray(StandardCharsets.UTF_8).size > MAX_PAYLOAD_BYTES) {
+                statusCode = 413
+                errorCode = "payload_too_large"
+                return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                    .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                    .body(problemBody(HttpStatus.PAYLOAD_TOO_LARGE, "Payload Too Large", "Request payload exceeds 128KB", "payload_too_large"))
+            }
+
             val feedback = try {
                 parseFeedbackBody(rawBody)
             } catch (ex: JsonProcessingException) {

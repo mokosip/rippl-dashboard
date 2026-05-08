@@ -204,6 +204,27 @@ class IngestionControllerTest {
     }
 
     @Test
+    fun `POST v1 activity sessions feedback enforces payload cap`() {
+        val ingestResponse = mockMvc.post("/v1/activity-sessions") {
+            contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer $bearerToken")
+            content = validPayload(sessionExternalId = "sess-feedback-cap-${UUID.randomUUID()}")
+        }.andExpect { status { isCreated() } }.andReturn()
+
+        val sessionId = objectMapper.readTree(ingestResponse.response.contentAsString).get("session_id").asText()
+        val oversizedValue = "x".repeat(140_000)
+
+        mockMvc.post("/v1/activity-sessions/$sessionId/feedback") {
+            contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer $bearerToken")
+            content = """{"type":"task_type","value":"$oversizedValue"}"""
+        }.andExpect {
+            status { isPayloadTooLarge() }
+            jsonPath("$.error_code") { value("payload_too_large") }
+        }
+    }
+
+    @Test
     fun `POST v1 activity sessions feedback upserts by type`() {
         val ingestResponse = mockMvc.post("/v1/activity-sessions") {
             contentType = MediaType.APPLICATION_JSON
