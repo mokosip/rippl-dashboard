@@ -16,6 +16,9 @@ class ExtensionToken(
     @Column(name = "token_hash", nullable = false, unique = true)
     var tokenHash: String,
 
+    @Column(name = "scope", nullable = false)
+    var scope: String = "ingest",
+
     @Column(name = "created_at")
     var createdAt: Instant = Instant.now(),
 

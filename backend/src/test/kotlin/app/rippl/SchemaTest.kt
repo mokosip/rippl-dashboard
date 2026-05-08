@@ -19,7 +19,15 @@ class SchemaTest {
             "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'",
             String::class.java
         )
-        assert(tables.containsAll(listOf("users", "auth_tokens", "collectors", "sessions"))) {
+        assert(tables.containsAll(listOf(
+            "users",
+            "auth_tokens",
+            "collectors",
+            "sessions",
+            "extension_tokens",
+            "activity_sessions",
+            "activity_feedback"
+        ))) {
             "Missing tables. Found: $tables"
         }
     }

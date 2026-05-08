@@ -28,5 +28,8 @@ app:
   base-url: ${BASE_URL:http://localhost:8080}
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
   extension-id: ${EXTENSION_ID:dev-extension-id}
+  extension-dev-id: ${EXTENSION_DEV_ID:}
   rate-limit:
     sync-per-minute: 10
+    ingestion-per-minute: 10
+    ingestion-burst: 30

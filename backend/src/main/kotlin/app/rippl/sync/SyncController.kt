@@ -23,9 +23,12 @@ class SyncController(
         if (request.sessions.isEmpty()) {
             return ResponseEntity.ok(SyncResponse(0, 0, System.currentTimeMillis()))
         }
-        if (!rateLimiter.tryAcquire(userId)) {
+        val rateLimit = rateLimiter.check(userId)
+        if (!rateLimit.allowed) {
             log.debug("Rate limit hit for userId: {}", userId)
-            return ResponseEntity.status(429).body(mapOf("error" to "rate_limit_exceeded"))
+            return ResponseEntity.status(429)
+                .header("Retry-After", (rateLimit.retryAfterSeconds ?: 1).toString())
+                .body(mapOf("error" to "rate_limit_exceeded"))
         }
         val result = syncService.sync(userId, request.sessions)
         return ResponseEntity.ok(result)
