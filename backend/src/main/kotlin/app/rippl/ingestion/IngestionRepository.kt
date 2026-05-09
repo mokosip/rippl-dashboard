@@ -19,7 +19,10 @@ class IngestionRepository(
         val metricsJson = objectMapper.writeValueAsString(payload.metrics)
         val contextJson = objectMapper.writeValueAsString(payload.context)
 
-        val inserted = jdbc.query(
+        // ON CONFLICT updates only synced_at to preserve raw payload immutability.
+        // xmax = 0 on the returned tuple means the row was freshly inserted;
+        // xmax != 0 means it was updated (i.e. a duplicate retry).
+        val (sessionId, wasInserted) = jdbc.query(
             """
             INSERT INTO activity_sessions (
                 user_id,
@@ -35,10 +38,11 @@ class IngestionRepository(
                 started_at,
                 ended_at
             ) VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?)
-            ON CONFLICT (user_id, collector_type, collector_session_id) DO NOTHING
-            RETURNING id
+            ON CONFLICT (user_id, collector_type, collector_session_id)
+            DO UPDATE SET synced_at = now()
+            RETURNING id, (xmax = 0) AS was_inserted
             """.trimIndent(),
-            { rs, _ -> UUID.fromString(rs.getString("id")) },
+            { rs, _ -> Pair(UUID.fromString(rs.getString("id")), rs.getBoolean("was_inserted")) },
             userId,
             payload.collector.type,
             payload.session.id,
@@ -51,25 +55,9 @@ class IngestionRepository(
             rawPayload,
             payload.session.startedAt,
             payload.session.endedAt
-        ).firstOrNull()
+        ).first()
 
-        if (inserted != null) {
-            return IngestWriteResult(sessionId = inserted, deduped = false)
-        }
-
-        val existingId = jdbc.queryForObject(
-            """
-            SELECT id
-            FROM activity_sessions
-            WHERE user_id = ? AND collector_type = ? AND collector_session_id = ?
-            """.trimIndent(),
-            UUID::class.java,
-            userId,
-            payload.collector.type,
-            payload.session.id
-        )!!
-
-        return IngestWriteResult(sessionId = existingId, deduped = true)
+        return IngestWriteResult(sessionId = sessionId, deduped = !wasInserted)
     }
 
     fun findOwnedSession(sessionId: UUID, userId: UUID): UUID? {

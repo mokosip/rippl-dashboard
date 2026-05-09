@@ -22,21 +22,14 @@ class CorsConfig(
             extensionDevId.takeIf { it.isNotBlank() }?.let { "chrome-extension://$it" }
         )
 
-        val syncConfig = CorsConfiguration().apply {
-            allowedOrigins = extensionOrigins
-            allowedMethods = listOf("POST")
-            allowedHeaders = listOf("Authorization", "Content-Type", "X-Request-Id")
-            allowCredentials = false
-        }
-        source.registerCorsConfiguration("/api/sync/**", syncConfig)
-
-        val ingestionConfig = CorsConfiguration().apply {
+        val extensionConfig = CorsConfiguration().apply {
             allowedOrigins = extensionOrigins
             allowedMethods = listOf("POST", "OPTIONS")
             allowedHeaders = listOf("Authorization", "Content-Type", "X-Request-Id")
             allowCredentials = false
         }
-        source.registerCorsConfiguration("/v1/**", ingestionConfig)
+        source.registerCorsConfiguration("/api/sync/**", extensionConfig)
+        source.registerCorsConfiguration("/v1/**", extensionConfig)
 
         val dashboardConfig = CorsConfiguration().apply {
             allowedOrigins = listOf(frontendUrl)

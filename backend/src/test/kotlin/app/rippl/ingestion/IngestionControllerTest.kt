@@ -96,6 +96,49 @@ class IngestionControllerTest {
     }
 
     @Test
+    fun `POST v1 activity sessions dedupe advances synced_at and keeps raw payload immutable`() {
+        val externalId = "sess-syncedat-${UUID.randomUUID()}"
+
+        mockMvc.post("/v1/activity-sessions") {
+            contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer $bearerToken")
+            content = validPayload(sessionExternalId = externalId, metricValue = 42)
+        }.andExpect { status { isCreated() } }
+
+        val syncedAtBefore = jdbc.queryForObject(
+            "SELECT synced_at FROM activity_sessions WHERE collector_session_id = ?",
+            java.sql.Timestamp::class.java,
+            externalId
+        )!!
+
+        Thread.sleep(20) // ensure DB clock advances between the two writes
+
+        mockMvc.post("/v1/activity-sessions") {
+            contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer $bearerToken")
+            content = validPayload(sessionExternalId = externalId, metricValue = 999)
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.deduped") { value(true) }
+        }
+
+        val syncedAtAfter = jdbc.queryForObject(
+            "SELECT synced_at FROM activity_sessions WHERE collector_session_id = ?",
+            java.sql.Timestamp::class.java,
+            externalId
+        )!!
+
+        assertTrue(syncedAtAfter.after(syncedAtBefore), "synced_at must advance on dedupe retry")
+
+        val storedMetric = jdbc.queryForObject(
+            "SELECT raw_payload -> 'metrics' ->> 'sample_metric' FROM activity_sessions WHERE collector_session_id = ?",
+            String::class.java,
+            externalId
+        )
+        assertEquals("42", storedMetric, "raw_payload must remain immutable on dedupe")
+    }
+
+    @Test
     fun `POST v1 activity sessions rejects unknown core fields`() {
         mockMvc.post("/v1/activity-sessions") {
             contentType = MediaType.APPLICATION_JSON
