@@ -194,6 +194,94 @@ class IngestionControllerTest {
     }
 
     @Test
+    fun `POST v1 activity sessions rejects missing context domain`() {
+        mockMvc.post("/v1/activity-sessions") {
+            contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer $bearerToken")
+            content = validPayload().replace(""""domain": "claude.ai",""", "")
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.error_code") { value("validation_error") }
+        }
+    }
+
+    @Test
+    fun `POST v1 activity sessions rejects missing context surface`() {
+        mockMvc.post("/v1/activity-sessions") {
+            contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer $bearerToken")
+            content = validPayload().replace(""""surface": "web",""", "")
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.error_code") { value("validation_error") }
+        }
+    }
+
+    @Test
+    fun `POST v1 activity sessions rejects missing metrics duration_ms`() {
+        val payload = """
+            {
+              "collector": {"type": "chrome_extension", "version": "1.0.0"},
+              "source": {"type": "browser", "version": "126"},
+              "session": {
+                "id": "sess-${UUID.randomUUID()}",
+                "started_at": ${Instant.now().minusSeconds(120).toEpochMilli()},
+                "ended_at": ${Instant.now().toEpochMilli()}
+              },
+              "privacy": {
+                "content_collected": false,
+                "content_sent": false,
+                "prompt_collected": false,
+                "response_collected": false
+              },
+              "metrics": {"active_ms": 5000},
+              "context": {"domain": "claude.ai", "surface": "web"}
+            }
+        """.trimIndent()
+
+        mockMvc.post("/v1/activity-sessions") {
+            contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer $bearerToken")
+            content = payload
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.error_code") { value("validation_error") }
+        }
+    }
+
+    @Test
+    fun `POST v1 activity sessions rejects missing metrics active_ms`() {
+        val payload = """
+            {
+              "collector": {"type": "chrome_extension", "version": "1.0.0"},
+              "source": {"type": "browser", "version": "126"},
+              "session": {
+                "id": "sess-${UUID.randomUUID()}",
+                "started_at": ${Instant.now().minusSeconds(120).toEpochMilli()},
+                "ended_at": ${Instant.now().toEpochMilli()}
+              },
+              "privacy": {
+                "content_collected": false,
+                "content_sent": false,
+                "prompt_collected": false,
+                "response_collected": false
+              },
+              "metrics": {"duration_ms": 5000},
+              "context": {"domain": "claude.ai", "surface": "web"}
+            }
+        """.trimIndent()
+
+        mockMvc.post("/v1/activity-sessions") {
+            contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer $bearerToken")
+            content = payload
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.error_code") { value("validation_error") }
+        }
+    }
+
+    @Test
     fun `POST v1 activity sessions rejects policy violations`() {
         mockMvc.post("/v1/activity-sessions") {
             contentType = MediaType.APPLICATION_JSON
