@@ -1,6 +1,6 @@
 package app.rippl.collectors
 
-import app.rippl.sessions.SessionRepository
+import app.rippl.ingestion.IngestionRepository
 import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -15,14 +15,14 @@ data class CreateCollectorRequest(val type: String)
 class CollectorsController(
     private val collectorRepository: CollectorRepository,
     private val extensionTokenService: ExtensionTokenService,
-    private val sessionRepository: SessionRepository
+    private val ingestionRepository: IngestionRepository
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
     @GetMapping
     fun list(@AuthenticationPrincipal userId: UUID): List<Map<String, Any?>> {
         log.debug("Listing collectors for userId: {}", userId)
-        val lastSync = sessionRepository.findFirstByUserIdOrderBySyncedAtDesc(userId)?.syncedAt
+        val lastSync = ingestionRepository.findLastSyncedAt(userId)
         return collectorRepository.findByUserId(userId).map { it.toDto(lastSync) }
     }
 

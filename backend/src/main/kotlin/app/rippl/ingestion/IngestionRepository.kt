@@ -3,6 +3,7 @@ package app.rippl.ingestion
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Repository
+import java.time.Instant
 import java.util.UUID
 
 @Repository
@@ -94,5 +95,13 @@ class IngestionRepository(
             sessionId,
             type
         ) ?: 0
+    }
+
+    fun findLastSyncedAt(userId: UUID): Instant? {
+        return jdbc.query(
+            "SELECT MAX(synced_at) AS last_sync FROM activity_sessions WHERE user_id = ?",
+            { rs, _ -> rs.getTimestamp("last_sync")?.toInstant() },
+            userId
+        ).firstOrNull()
     }
 }

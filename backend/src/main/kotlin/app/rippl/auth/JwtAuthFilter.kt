@@ -23,7 +23,7 @@ class JwtAuthFilter(
         response: HttpServletResponse,
         chain: FilterChain
     ) {
-        val requiresIngestBearer = request.requestURI.startsWith("/api/sync/") || request.requestURI.startsWith("/v1/")
+        val requiresIngestBearer = request.requestURI.startsWith("/v1/")
         val userId = authenticateBearer(request, requiresIngestBearer)?.userId
             ?: if (!requiresIngestBearer) authenticateCookie(request) else null
 

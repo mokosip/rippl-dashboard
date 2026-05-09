@@ -63,7 +63,11 @@ class EstimatedSessionStorageTest {
     ): T? {
         val deadline = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < deadline) {
-            val result = predicate()
+            val result = try {
+                predicate()
+            } catch (_: Exception) {
+                null
+            }
             if (result != null) return result
             Thread.sleep(intervalMs)
         }

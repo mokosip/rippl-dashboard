@@ -28,7 +28,6 @@ class CorsConfig(
             allowedHeaders = listOf("Authorization", "Content-Type", "X-Request-Id")
             allowCredentials = false
         }
-        source.registerCorsConfiguration("/api/sync/**", extensionConfig)
         source.registerCorsConfiguration("/v1/**", extensionConfig)
 
         val dashboardConfig = CorsConfiguration().apply {
