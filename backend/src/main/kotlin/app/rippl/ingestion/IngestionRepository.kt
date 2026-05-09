@@ -13,32 +13,40 @@ class IngestionRepository(
 ) {
 
     fun ingest(userId: UUID, payload: ActivitySessionRequest, rawPayload: String): IngestWriteResult {
-        val collectorJson = objectMapper.writeValueAsString(payload.collector)
-        val sourceJson = objectMapper.writeValueAsString(payload.source)
-        val sessionJson = objectMapper.writeValueAsString(payload.session)
-        val privacyJson = objectMapper.writeValueAsString(payload.privacy)
-        val metricsJson = objectMapper.writeValueAsString(payload.metrics)
-        val contextJson = objectMapper.writeValueAsString(payload.context)
+        val collectorMetrics = payload.metrics
+            .filterKeys { it !in setOf("duration_ms", "active_ms") }
+        val collectorContext = payload.context
+            .filterKeys { it !in setOf("domain", "surface") }
 
-        // ON CONFLICT updates only synced_at to preserve raw payload immutability.
-        // xmax = 0 on the returned tuple means the row was freshly inserted;
-        // xmax != 0 means it was updated (i.e. a duplicate retry).
+        val collectorMetricsJson = objectMapper.writeValueAsString(collectorMetrics)
+        val collectorContextJson = objectMapper.writeValueAsString(collectorContext)
+
+        val startedAt = java.sql.Timestamp.from(java.time.Instant.ofEpochMilli(payload.session.startedAt))
+        val endedAt = java.sql.Timestamp.from(java.time.Instant.ofEpochMilli(payload.session.endedAt))
+        val durationMs = (payload.metrics["duration_ms"] as Number).toLong()
+        val activeMs = (payload.metrics["active_ms"] as Number).toLong()
+        val domain = payload.context["domain"] as String
+        val surface = payload.context["surface"] as String
+
         val (sessionId, wasInserted) = jdbc.query(
             """
             INSERT INTO activity_sessions (
                 user_id,
                 collector_type,
+                collector_version,
                 collector_session_id,
-                collector,
-                source,
-                session,
-                privacy,
-                metrics,
-                context,
-                raw_payload,
+                source_type,
+                source_version,
+                domain,
+                surface,
                 started_at,
-                ended_at
-            ) VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?)
+                ended_at,
+                duration_ms,
+                active_ms,
+                collector_metrics,
+                collector_context,
+                raw_payload
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb)
             ON CONFLICT (user_id, collector_type, collector_session_id)
             DO UPDATE SET synced_at = now()
             RETURNING id, (xmax = 0) AS was_inserted
@@ -46,16 +54,19 @@ class IngestionRepository(
             { rs, _ -> Pair(UUID.fromString(rs.getString("id")), rs.getBoolean("was_inserted")) },
             userId,
             payload.collector.type,
+            payload.collector.version,
             payload.session.id,
-            collectorJson,
-            sourceJson,
-            sessionJson,
-            privacyJson,
-            metricsJson,
-            contextJson,
-            rawPayload,
-            payload.session.startedAt,
-            payload.session.endedAt
+            payload.source.type,
+            payload.source.version,
+            domain,
+            surface,
+            startedAt,
+            endedAt,
+            durationMs,
+            activeMs,
+            collectorMetricsJson,
+            collectorContextJson,
+            rawPayload
         ).first()
 
         return IngestWriteResult(sessionId = sessionId, deduped = !wasInserted)
