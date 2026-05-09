@@ -437,6 +437,7 @@ class IngestionControllerTest {
         extraCollectorField: Boolean = false
     ): String {
         val extra = if (extraCollectorField) ",\"unexpected\":\"nope\"" else ""
+        val durationMs = endedAt - startedAt
         return """
             {
               "collector": {"type": "chrome_extension", "version": "1.0.0"$extra},
@@ -453,10 +454,13 @@ class IngestionControllerTest {
                 "response_collected": false
               },
               "metrics": {
+                "duration_ms": $durationMs,
+                "active_ms": $durationMs,
                 "sample_metric": $metricValue
               },
               "context": {
                 "domain": "claude.ai",
+                "surface": "web",
                 "mode": "legacy-sync"
               }
             }
@@ -464,14 +468,16 @@ class IngestionControllerTest {
     }
 
     private fun validPayloadWithFlexibleMetricsAndContext(): String {
+        val now = Instant.now().toEpochMilli()
+        val start = now - 30_000
         return """
             {
               "collector": {"type": "chrome_extension", "version": "1.0.0"},
               "source": {"type": "browser", "version": "126"},
               "session": {
                 "id": "sess-flex-${UUID.randomUUID()}",
-                "started_at": ${Instant.now().minusSeconds(30).toEpochMilli()},
-                "ended_at": ${Instant.now().toEpochMilli()}
+                "started_at": $start,
+                "ended_at": $now
               },
               "privacy": {
                 "content_collected": false,
@@ -480,11 +486,15 @@ class IngestionControllerTest {
                 "response_collected": false
               },
               "metrics": {
+                "duration_ms": 30000,
+                "active_ms": 30000,
                 "totally_new_metric": {
                   "deep": {"number": 7}
                 }
               },
               "context": {
+                "domain": "claude.ai",
+                "surface": "web",
                 "extra": {
                   "nested": ["a", "b"]
                 }

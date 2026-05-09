@@ -206,23 +206,34 @@ class EstimatedSessionStorageTest {
         sessionExternalId: String = "sess-${UUID.randomUUID()}",
         startedAt: Long = Instant.now().minusSeconds(120).toEpochMilli(),
         endedAt: Long = Instant.now().toEpochMilli()
-    ): String = """
-        {
-          "collector": {"type": "chrome_extension", "version": "1.0.0"},
-          "source": {"type": "browser", "version": "126"},
-          "session": {
-            "id": "$sessionExternalId",
-            "started_at": $startedAt,
-            "ended_at": $endedAt
-          },
-          "privacy": {
-            "content_collected": false,
-            "content_sent": false,
-            "prompt_collected": false,
-            "response_collected": false
-          },
-          "metrics": {"sample_metric": 1},
-          "context": {"domain": "claude.ai", "mode": "legacy-sync"}
-        }
-    """.trimIndent()
+    ): String {
+        val durationMs = endedAt - startedAt
+        return """
+            {
+              "collector": {"type": "chrome_extension", "version": "1.0.0"},
+              "source": {"type": "browser", "version": "126"},
+              "session": {
+                "id": "$sessionExternalId",
+                "started_at": $startedAt,
+                "ended_at": $endedAt
+              },
+              "privacy": {
+                "content_collected": false,
+                "content_sent": false,
+                "prompt_collected": false,
+                "response_collected": false
+              },
+              "metrics": {
+                "duration_ms": $durationMs,
+                "active_ms": $durationMs,
+                "sample_metric": 1
+              },
+              "context": {
+                "domain": "claude.ai",
+                "surface": "web",
+                "mode": "legacy-sync"
+              }
+            }
+        """.trimIndent()
+    }
 }
