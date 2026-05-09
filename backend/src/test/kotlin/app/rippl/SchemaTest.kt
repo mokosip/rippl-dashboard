@@ -74,4 +74,55 @@ class SchemaTest {
             "Missing idx_estimated_sessions_user_confidence. Found: $indexes"
         }
     }
+
+    @Test
+    fun `activity_sessions has flat columns not JSONB blobs`() {
+        val columns = jdbc.queryForList(
+            """
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'activity_sessions'
+            ORDER BY ordinal_position
+            """.trimIndent()
+        ).associate { it["column_name"] as String to it["data_type"] as String }
+
+        // New flat columns exist
+        assert("domain" in columns) { "Missing column: domain" }
+        assert("surface" in columns) { "Missing column: surface" }
+        assert("source_type" in columns) { "Missing column: source_type" }
+        assert("duration_ms" in columns) { "Missing column: duration_ms" }
+        assert("active_ms" in columns) { "Missing column: active_ms" }
+        assert("collector_version" in columns) { "Missing column: collector_version" }
+        assert(columns["started_at"] == "timestamp with time zone") {
+            "started_at should be TIMESTAMPTZ, got: ${columns["started_at"]}"
+        }
+
+        // Old JSONB blob columns are gone
+        assert("collector" !in columns) { "Old column 'collector' should be dropped" }
+        assert("source" !in columns) { "Old column 'source' should be dropped" }
+        assert("session" !in columns) { "Old column 'session' should be dropped" }
+        assert("privacy" !in columns) { "Old column 'privacy' should be dropped" }
+
+        // JSONB columns for variable data
+        assert("collector_metrics" in columns) { "Missing column: collector_metrics" }
+        assert("collector_context" in columns) { "Missing column: collector_context" }
+        assert("raw_payload" in columns) { "Missing column: raw_payload" }
+    }
+
+    @Test
+    fun `activity_sessions has new indexes`() {
+        val indexes = jdbc.queryForList(
+            "SELECT indexname FROM pg_indexes WHERE tablename = 'activity_sessions'",
+            String::class.java
+        )
+        assert(indexes.contains("uq_activity_sessions_dedupe")) { "Missing uq_activity_sessions_dedupe" }
+        assert(indexes.contains("idx_activity_sessions_user_time")) { "Missing idx_activity_sessions_user_time" }
+        assert(indexes.contains("idx_activity_sessions_domain")) { "Missing idx_activity_sessions_domain" }
+        assert(indexes.contains("idx_activity_sessions_collector")) { "Missing idx_activity_sessions_collector" }
+
+        // Old index should be gone
+        assert(!indexes.contains("idx_activity_sessions_user_created")) {
+            "Old idx_activity_sessions_user_created should be dropped"
+        }
+    }
 }
