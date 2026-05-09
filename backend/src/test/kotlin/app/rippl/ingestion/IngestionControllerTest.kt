@@ -139,6 +139,42 @@ class IngestionControllerTest {
     }
 
     @Test
+    fun `POST v1 activity sessions strips promoted fields from collector_metrics`() {
+        val externalId = "sess-strip-${UUID.randomUUID()}"
+
+        mockMvc.post("/v1/activity-sessions") {
+            contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer $bearerToken")
+            content = validPayload(sessionExternalId = externalId)
+        }.andExpect { status { isCreated() } }
+
+        val collectorMetrics = jdbc.queryForObject(
+            "SELECT collector_metrics FROM activity_sessions WHERE collector_session_id = ?",
+            String::class.java,
+            externalId
+        )!!
+
+        val metricsNode = objectMapper.readTree(collectorMetrics)
+        assert(!metricsNode.has("duration_ms")) { "duration_ms should be stripped from collector_metrics" }
+        assert(!metricsNode.has("active_ms")) { "active_ms should be stripped from collector_metrics" }
+        assert(metricsNode.has("sample_metric")) { "sample_metric should remain in collector_metrics" }
+
+        val domain = jdbc.queryForObject(
+            "SELECT domain FROM activity_sessions WHERE collector_session_id = ?",
+            String::class.java,
+            externalId
+        )
+        assertEquals("claude.ai", domain)
+
+        val surface = jdbc.queryForObject(
+            "SELECT surface FROM activity_sessions WHERE collector_session_id = ?",
+            String::class.java,
+            externalId
+        )
+        assertEquals("web", surface)
+    }
+
+    @Test
     fun `POST v1 activity sessions rejects unknown core fields`() {
         mockMvc.post("/v1/activity-sessions") {
             contentType = MediaType.APPLICATION_JSON
