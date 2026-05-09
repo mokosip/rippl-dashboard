@@ -74,23 +74,23 @@ class IngestionService(
         }
 
         val domain = payload.context["domain"]
-        if (domain == null || domain !is String || domain.isBlank()) {
+        if (domain !is String || domain.isBlank()) {
             errors.add(FieldError("context.domain", "must be a non-blank string"))
         }
 
         val surface = payload.context["surface"]
-        if (surface == null || surface !is String || surface.isBlank()) {
+        if (surface !is String || surface.isBlank()) {
             errors.add(FieldError("context.surface", "must be a non-blank string"))
         }
 
         val durationMs = payload.metrics["duration_ms"]
-        if (durationMs == null || durationMs !is Number) {
-            errors.add(FieldError("metrics.duration_ms", "must be a number"))
+        if (durationMs !is Number || durationMs.toLong() < 0) {
+            errors.add(FieldError("metrics.duration_ms", "must be a non-negative number"))
         }
 
         val activeMs = payload.metrics["active_ms"]
-        if (activeMs == null || activeMs !is Number) {
-            errors.add(FieldError("metrics.active_ms", "must be a number"))
+        if (activeMs !is Number || activeMs.toLong() < 0) {
+            errors.add(FieldError("metrics.active_ms", "must be a non-negative number"))
         }
 
         if (errors.isNotEmpty()) {
