@@ -10,11 +10,11 @@ data class ScoringConfig(
     val minScorableMs: Long = 10_000
 ) {
     data class Multipliers(
-        val writing: Double = 1.4,
-        val coding: Double = 1.7,
-        val research: Double = 1.3,
+        val writing: Double = 1.8,
+        val coding: Double = 2.2,
+        val research: Double = 1.7,
         val planning: Double = 1.5,
-        val communication: Double = 1.35,
+        val communication: Double = 1.3,
         val other: Double = 1.2
     )
 
