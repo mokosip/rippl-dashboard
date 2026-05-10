@@ -1,15 +1,18 @@
 package app.rippl.ingestion
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 
 @Service
 class IngestionService(
     private val repository: IngestionRepository,
     private val scoringDispatchService: ScoringDispatchService,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val eventPublisher: ApplicationEventPublisher
 ) {
 
     companion object {
@@ -26,6 +29,7 @@ class IngestionService(
         return result
     }
 
+    @Transactional
     fun saveFeedback(userId: UUID, sessionId: UUID, request: SessionFeedbackRequest) {
         validateFeedback(request)
 
@@ -38,7 +42,7 @@ class IngestionService(
 
         val valueJson = objectMapper.writeValueAsString(request.value)
         repository.upsertFeedback(ownedSession, request.type, valueJson)
-        scoringDispatchService.triggerFeedbackRescoring(ownedSession)
+        eventPublisher.publishEvent(FeedbackSavedEvent(ownedSession))
     }
 
     private fun validateSessionPayload(payload: ActivitySessionRequest) {

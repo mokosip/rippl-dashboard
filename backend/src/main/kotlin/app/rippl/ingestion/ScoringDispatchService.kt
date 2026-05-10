@@ -3,6 +3,7 @@ package app.rippl.ingestion
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
+import org.springframework.transaction.event.TransactionalEventListener
 import java.util.UUID
 
 @Service
@@ -22,12 +23,13 @@ class ScoringDispatchService(
     }
 
     @Async
-    fun triggerFeedbackRescoring(sessionId: UUID) {
+    @TransactionalEventListener
+    fun onFeedbackSaved(event: FeedbackSavedEvent) {
         try {
-            scoringService.rescoreFromFeedback(sessionId)
-            log.debug("Completed async feedback re-scoring for sessionId={}", sessionId)
+            scoringService.rescoreFromFeedback(event.sessionId)
+            log.debug("Completed feedback re-scoring for sessionId={}", event.sessionId)
         } catch (ex: Exception) {
-            log.warn("Failed async feedback re-scoring for sessionId={}", sessionId, ex)
+            log.warn("Failed feedback re-scoring for sessionId={}", event.sessionId, ex)
         }
     }
 }

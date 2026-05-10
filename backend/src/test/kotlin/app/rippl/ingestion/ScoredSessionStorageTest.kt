@@ -183,6 +183,103 @@ class ScoredSessionStorageTest {
         }
     }
 
+    @Test
+    fun `scoring produces real values not placeholders`() {
+        val ingestResponse = mockMvc.post("/v1/activity-sessions") {
+            contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer $bearerToken")
+            content = sessionPayload(
+                sessionExternalId = "sess-real-${UUID.randomUUID()}",
+                startedAt = Instant.now().minusSeconds(1200).toEpochMilli(),
+                endedAt = Instant.now().toEpochMilli()
+            )
+        }.andExpect { status { isCreated() } }.andReturn()
+
+        val sessionId = UUID.fromString(
+            objectMapper.readTree(ingestResponse.response.contentAsString).get("session_id").asText()
+        )
+
+        val scored = pollUntil {
+            jdbc.query(
+                """
+                SELECT effective_multiplier, estimated_time_saved_ms, confidence, scoring_method, inferred_task_mix
+                FROM scored_sessions WHERE activity_session_id = ?
+                """,
+                { rs, _ ->
+                    mapOf(
+                        "multiplier" to rs.getDouble("effective_multiplier"),
+                        "saved" to rs.getLong("estimated_time_saved_ms"),
+                        "confidence" to rs.getString("confidence"),
+                        "method" to rs.getString("scoring_method"),
+                        "task_mix" to rs.getString("inferred_task_mix")
+                    )
+                },
+                sessionId
+            ).firstOrNull()
+        } ?: error("scored_sessions row never appeared for session $sessionId")
+
+        val multiplier = scored["multiplier"] as Double
+        val saved = scored["saved"] as Long
+        val method = scored["method"] as String
+        val taskMix = scored["task_mix"] as String
+
+        assert(multiplier > 1.0) { "effective_multiplier should be > 1.0, was $multiplier" }
+        assert(saved > 0) { "estimated_time_saved_ms should be > 0 for a 20min session, was $saved" }
+        assertEquals("global_fallback", method) { "no profile or feedback, should be global_fallback" }
+        assert(!taskMix.contains("unknown")) { "task_mix should not contain 'unknown' placeholder, was $taskMix" }
+    }
+
+    @Test
+    fun `feedback rescoring updates method to feedback_adjusted`() {
+        val ingestResponse = mockMvc.post("/v1/activity-sessions") {
+            contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer $bearerToken")
+            content = sessionPayload(
+                sessionExternalId = "sess-fb-${UUID.randomUUID()}",
+                startedAt = Instant.now().minusSeconds(600).toEpochMilli(),
+                endedAt = Instant.now().toEpochMilli()
+            )
+        }.andExpect { status { isCreated() } }.andReturn()
+
+        val sessionId = UUID.fromString(
+            objectMapper.readTree(ingestResponse.response.contentAsString).get("session_id").asText()
+        )
+
+        pollUntil {
+            jdbc.queryForObject(
+                "SELECT scored_at FROM scored_sessions WHERE activity_session_id = ?",
+                java.sql.Timestamp::class.java,
+                sessionId
+            )
+        } ?: error("Initial scoring never completed for session $sessionId")
+
+        mockMvc.post("/v1/activity-sessions/$sessionId/feedback") {
+            contentType = MediaType.APPLICATION_JSON
+            header("Authorization", "Bearer $bearerToken")
+            content = """{"type":"task_type","value":"coding"}"""
+        }.andExpect { status { isOk() } }
+
+        val method = pollUntil {
+            val m = jdbc.queryForObject(
+                "SELECT scoring_method FROM scored_sessions WHERE activity_session_id = ?",
+                String::class.java,
+                sessionId
+            )
+            if (m == "feedback_adjusted") m else null
+        }
+
+        assertEquals("feedback_adjusted", method) {
+            "After task_type feedback, scoring_method should be feedback_adjusted"
+        }
+
+        val multiplier = jdbc.queryForObject(
+            "SELECT effective_multiplier FROM scored_sessions WHERE activity_session_id = ?",
+            Double::class.java,
+            sessionId
+        )
+        assertEquals(1.7, multiplier!!, 0.001) { "coding feedback should produce coding multiplier 1.7" }
+    }
+
     private fun sessionPayload(
         sessionExternalId: String = "sess-${UUID.randomUUID()}",
         startedAt: Long = Instant.now().minusSeconds(120).toEpochMilli(),

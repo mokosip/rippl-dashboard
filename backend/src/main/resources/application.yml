@@ -33,3 +33,23 @@ app:
     sync-per-minute: 10
     ingestion-per-minute: 10
     ingestion-burst: 30
+
+rippl:
+  scoring:
+    multipliers:
+      writing: 1.4
+      coding: 1.7
+      research: 1.3
+      planning: 1.5
+      communication: 1.35
+      other: 1.2
+    confidence-weights:
+      duration: 0.25
+      interaction: 0.20
+      task-certainty: 0.30
+      collector-signal: 0.15
+      profile: 0.10
+    confidence-thresholds:
+      medium: 0.40
+      high: 0.70
+    min-scorable-ms: 10000
