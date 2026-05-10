@@ -27,7 +27,8 @@ class SchemaTest {
             "extension_tokens",
             "activity_sessions",
             "activity_feedback",
-            "scored_sessions"
+            "scored_sessions",
+            "user_profiles"
         ))) {
             "Missing tables. Found: $tables"
         }
