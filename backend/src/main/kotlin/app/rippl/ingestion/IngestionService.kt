@@ -8,7 +8,7 @@ import java.util.UUID
 @Service
 class IngestionService(
     private val repository: IngestionRepository,
-    private val estimationDispatchService: EstimationDispatchService,
+    private val scoringDispatchService: ScoringDispatchService,
     private val objectMapper: ObjectMapper
 ) {
 
@@ -21,7 +21,7 @@ class IngestionService(
 
         val result = repository.ingest(userId, payload, rawPayload)
         if (!result.deduped) {
-            estimationDispatchService.triggerInitialEstimation(result.sessionId)
+            scoringDispatchService.triggerInitialScoring(result.sessionId)
         }
         return result
     }
@@ -38,7 +38,7 @@ class IngestionService(
 
         val valueJson = objectMapper.writeValueAsString(request.value)
         repository.upsertFeedback(ownedSession, request.type, valueJson)
-        estimationDispatchService.triggerFeedbackReestimation(ownedSession)
+        scoringDispatchService.triggerFeedbackRescoring(ownedSession)
     }
 
     private fun validateSessionPayload(payload: ActivitySessionRequest) {

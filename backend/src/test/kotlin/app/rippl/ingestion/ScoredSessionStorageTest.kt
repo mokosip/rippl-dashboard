@@ -9,7 +9,6 @@ import app.rippl.collectors.ExtensionTokenService
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -26,7 +25,7 @@ import java.util.UUID
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import(TestcontainersConfig::class)
-class EstimatedSessionStorageTest {
+class ScoredSessionStorageTest {
 
     @Autowired lateinit var mockMvc: MockMvc
     @Autowired lateinit var userRepository: UserRepository
@@ -47,10 +46,6 @@ class EstimatedSessionStorageTest {
         val collector = collectorRepository.save(Collector(userId = currentUser.id!!, type = "chrome_extension"))
         bearerToken = extensionTokenService.createToken(collector.id!!, currentUser.id!!)
     }
-
-    // -------------------------------------------------------------------------
-    // Polling helper
-    // -------------------------------------------------------------------------
 
     /**
      * Polls [predicate] every [intervalMs] until it returns a non-null value or
@@ -74,12 +69,8 @@ class EstimatedSessionStorageTest {
         return null
     }
 
-    // -------------------------------------------------------------------------
-    // Tests
-    // -------------------------------------------------------------------------
-
     @Test
-    fun `ingest creates estimated_sessions row eventually`() {
+    fun `ingest creates scored_sessions row eventually`() {
         val ingestResponse = mockMvc.post("/v1/activity-sessions") {
             contentType = MediaType.APPLICATION_JSON
             header("Authorization", "Bearer $bearerToken")
@@ -90,28 +81,28 @@ class EstimatedSessionStorageTest {
             objectMapper.readTree(ingestResponse.response.contentAsString).get("session_id").asText()
         )
 
-        val estimatedAt = pollUntil {
+        val scoredAt = pollUntil {
             jdbc.queryForObject(
-                "SELECT estimated_at FROM estimated_sessions WHERE activity_session_id = ?",
+                "SELECT scored_at FROM scored_sessions WHERE activity_session_id = ?",
                 java.sql.Timestamp::class.java,
                 sessionId
             )
         }
 
-        assertNotNull(estimatedAt) {
-            "Expected an estimated_sessions row for session $sessionId but none appeared within timeout"
+        assertNotNull(scoredAt) {
+            "Expected a scored_sessions row for session $sessionId but none appeared within timeout"
         }
 
         val rowCount = jdbc.queryForObject(
-            "SELECT COUNT(*) FROM estimated_sessions WHERE activity_session_id = ?",
+            "SELECT COUNT(*) FROM scored_sessions WHERE activity_session_id = ?",
             Int::class.java,
             sessionId
         )
-        assertEquals(1, rowCount) { "Expected exactly 1 estimated_sessions row" }
+        assertEquals(1, rowCount) { "Expected exactly 1 scored_sessions row" }
     }
 
     @Test
-    fun `feedback triggers re-estimation - estimated_at moves forward and row count stays 1`() {
+    fun `feedback triggers re-scoring - scored_at moves forward and row count stays 1`() {
         val ingestResponse = mockMvc.post("/v1/activity-sessions") {
             contentType = MediaType.APPLICATION_JSON
             header("Authorization", "Bearer $bearerToken")
@@ -122,50 +113,46 @@ class EstimatedSessionStorageTest {
             objectMapper.readTree(ingestResponse.response.contentAsString).get("session_id").asText()
         )
 
-        // Wait for initial estimation row
-        val firstEstimatedAt: java.sql.Timestamp = pollUntil {
+        val firstScoredAt: java.sql.Timestamp = pollUntil {
             jdbc.queryForObject(
-                "SELECT estimated_at FROM estimated_sessions WHERE activity_session_id = ?",
+                "SELECT scored_at FROM scored_sessions WHERE activity_session_id = ?",
                 java.sql.Timestamp::class.java,
                 sessionId
             )
-        } ?: error("Initial estimated_sessions row never appeared for session $sessionId")
+        } ?: error("Initial scored_sessions row never appeared for session $sessionId")
 
-        // Small pause so clock advances before the feedback re-estimation
         Thread.sleep(50)
 
-        // Submit feedback to trigger re-estimation
         mockMvc.post("/v1/activity-sessions/$sessionId/feedback") {
             contentType = MediaType.APPLICATION_JSON
             header("Authorization", "Bearer $bearerToken")
             content = """{"type":"task_type","value":"coding"}"""
         }.andExpect { status { isOk() } }
 
-        // Poll until estimated_at is strictly greater than the first value
-        val updatedEstimatedAt = pollUntil {
+        val updatedScoredAt = pollUntil {
             val ts = jdbc.queryForObject(
-                "SELECT estimated_at FROM estimated_sessions WHERE activity_session_id = ?",
+                "SELECT scored_at FROM scored_sessions WHERE activity_session_id = ?",
                 java.sql.Timestamp::class.java,
                 sessionId
             ) ?: return@pollUntil null
-            if (ts.after(firstEstimatedAt)) ts else null
+            if (ts.after(firstScoredAt)) ts else null
         }
 
-        assertNotNull(updatedEstimatedAt) {
-            "expected estimated_at to advance after feedback re-estimation for session $sessionId " +
-                "(first=$firstEstimatedAt)"
+        assertNotNull(updatedScoredAt) {
+            "expected scored_at to advance after feedback re-scoring for session $sessionId " +
+                "(first=$firstScoredAt)"
         }
 
         val rowCount = jdbc.queryForObject(
-            "SELECT COUNT(*) FROM estimated_sessions WHERE activity_session_id = ?",
+            "SELECT COUNT(*) FROM scored_sessions WHERE activity_session_id = ?",
             Int::class.java,
             sessionId
         )
-        assertEquals(1, rowCount) { "Upsert must keep exactly 1 estimated_sessions row, not insert a second" }
+        assertEquals(1, rowCount) { "Upsert must keep exactly 1 scored_sessions row, not insert a second" }
     }
 
     @Test
-    fun `cascade delete from activity_sessions removes estimated_sessions row`() {
+    fun `cascade delete from activity_sessions removes scored_sessions row`() {
         val ingestResponse = mockMvc.post("/v1/activity-sessions") {
             contentType = MediaType.APPLICATION_JSON
             header("Authorization", "Bearer $bearerToken")
@@ -176,31 +163,25 @@ class EstimatedSessionStorageTest {
             objectMapper.readTree(ingestResponse.response.contentAsString).get("session_id").asText()
         )
 
-        // Wait for estimation row to exist before we delete the parent
         pollUntil {
             jdbc.queryForObject(
-                "SELECT COUNT(*) FROM estimated_sessions WHERE activity_session_id = ?",
+                "SELECT COUNT(*) FROM scored_sessions WHERE activity_session_id = ?",
                 Int::class.java,
                 sessionId
             )?.takeIf { it > 0 }
-        } ?: error("estimated_sessions row never appeared before cascade test for session $sessionId")
+        } ?: error("scored_sessions row never appeared before cascade test for session $sessionId")
 
-        // Delete parent row — cascade should remove estimated_sessions row
         jdbc.update("DELETE FROM activity_sessions WHERE id = ?", sessionId)
 
         val remaining = jdbc.queryForObject(
-            "SELECT COUNT(*) FROM estimated_sessions WHERE activity_session_id = ?",
+            "SELECT COUNT(*) FROM scored_sessions WHERE activity_session_id = ?",
             Int::class.java,
             sessionId
         )
         assertEquals(0, remaining) {
-            "ON DELETE CASCADE must remove estimated_sessions row when activity_sessions row is deleted"
+            "ON DELETE CASCADE must remove scored_sessions row when activity_sessions row is deleted"
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Payload helper
-    // -------------------------------------------------------------------------
 
     private fun sessionPayload(
         sessionExternalId: String = "sess-${UUID.randomUUID()}",

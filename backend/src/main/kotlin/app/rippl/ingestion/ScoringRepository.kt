@@ -5,34 +5,34 @@ import org.springframework.stereotype.Repository
 import java.util.UUID
 
 @Repository
-class EstimationRepository(
+class ScoringRepository(
     private val jdbc: JdbcTemplate
 ) {
 
     /**
-     * Upsert an estimated_sessions row by activity_session_id.
+     * Upsert a scored_sessions row by activity_session_id.
      * user_id is derived from activity_sessions to enforce ownership consistency.
-     * On conflict, all mutable fields plus estimated_at are updated.
+     * On conflict, all mutable fields plus scored_at are updated.
      */
-    fun upsertEstimation(
+    fun upsertScoring(
         sessionId: UUID,
         inferredTaskMixJson: String,
         effectiveMultiplier: Double,
         estimatedTimeSavedMs: Long,
         confidence: String,
-        estimationMethod: String
+        scoringMethod: String
     ) {
         jdbc.update(
             """
-            INSERT INTO estimated_sessions (
+            INSERT INTO scored_sessions (
                 activity_session_id,
                 user_id,
                 inferred_task_mix,
                 effective_multiplier,
                 estimated_time_saved_ms,
                 confidence,
-                estimation_method,
-                estimated_at
+                scoring_method,
+                scored_at
             )
             SELECT
                 a.id,
@@ -40,8 +40,8 @@ class EstimationRepository(
                 ?::jsonb,
                 ?,
                 ?,
-                ?::estimation_confidence,
-                ?::estimation_method,
+                ?::scoring_confidence,
+                ?::scoring_method,
                 now()
             FROM activity_sessions a
             WHERE a.id = ?
@@ -50,14 +50,14 @@ class EstimationRepository(
                 effective_multiplier    = EXCLUDED.effective_multiplier,
                 estimated_time_saved_ms = EXCLUDED.estimated_time_saved_ms,
                 confidence              = EXCLUDED.confidence,
-                estimation_method       = EXCLUDED.estimation_method,
-                estimated_at            = now()
+                scoring_method          = EXCLUDED.scoring_method,
+                scored_at               = now()
             """.trimIndent(),
             inferredTaskMixJson,
             effectiveMultiplier,
             estimatedTimeSavedMs,
             confidence,
-            estimationMethod,
+            scoringMethod,
             sessionId
         )
     }
