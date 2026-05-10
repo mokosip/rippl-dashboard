@@ -4,7 +4,6 @@ import type { MirrorMoment } from '../types'
 const TYPE_ICONS: Record<string, string> = {
   weekly_usage: '📈',
   top_tool: '🎯',
-  time_saving_activity: '⏱️',
   busiest_day: '📅',
 }
 
