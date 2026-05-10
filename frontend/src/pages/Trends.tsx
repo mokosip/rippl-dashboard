@@ -31,7 +31,7 @@ export function Trends() {
 
   const activityData = (() => {
     if (!timeSaved) return []
-    const entries = Object.entries(timeSaved.byTaskMix).map(([task, saved]) => ({
+    const entries = Object.entries(timeSaved.byTaskMix ?? {}).map(([task, saved]) => ({
       name: task,
       value: saved,
       breakdown: undefined as { name: string; value: number }[] | undefined,

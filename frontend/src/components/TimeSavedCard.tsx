@@ -10,7 +10,7 @@ export function TimeSavedCard({ data }: { data: TimeSaved }) {
   const hours = Math.floor(data.total / 60)
   const minutes = data.total % 60
   const display = hours > 0 ? `${hours},${Math.round((minutes / 60) * 10)}h` : `${minutes}m`
-  const conf = CONFIDENCE_DISPLAY[data.confidence]
+  const conf = CONFIDENCE_DISPLAY[data.confidence ?? 'low']
 
   return (
     <div className="flex flex-col items-center py-8">
