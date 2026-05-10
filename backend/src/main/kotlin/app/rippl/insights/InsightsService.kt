@@ -17,7 +17,6 @@ class InsightsService(private val jdbc: JdbcTemplate) {
         val moments = mutableListOf<MirrorMoment>()
         weeklyUsage(userId)?.let { moments.add(it) }
         topTool(userId)?.let { moments.add(it) }
-        timeSavingActivity(userId)?.let { moments.add(it) }
         busiestDay(userId)?.let { moments.add(it) }
         log.debug("Generated {} mirror moments for userId: {} — types: {}", moments.size, userId, moments.map { it.type })
         return moments
@@ -27,10 +26,13 @@ class InsightsService(private val jdbc: JdbcTemplate) {
         val rows = jdbc.query(
             """
             SELECT
-                COALESCE(SUM(CASE WHEN date >= date_trunc('week', CURRENT_DATE) THEN active_seconds END), 0) AS this_week,
-                COALESCE(SUM(CASE WHEN date >= date_trunc('week', CURRENT_DATE) - INTERVAL '7 days'
-                                   AND date < date_trunc('week', CURRENT_DATE) THEN active_seconds END), 0) AS last_week
-            FROM sessions WHERE user_id = ?
+                COALESCE(SUM(CASE WHEN a.started_at >= date_trunc('week', CURRENT_DATE)
+                    THEN a.active_ms END), 0) / 1000 AS this_week,
+                COALESCE(SUM(CASE WHEN a.started_at >= date_trunc('week', CURRENT_DATE) - INTERVAL '7 days'
+                                  AND a.started_at < date_trunc('week', CURRENT_DATE)
+                    THEN a.active_ms END), 0) / 1000 AS last_week
+            FROM activity_sessions a
+            WHERE a.user_id = ?
             """,
             { rs, _ -> rs.getLong("this_week") to rs.getLong("last_week") },
             userId
@@ -55,9 +57,10 @@ class InsightsService(private val jdbc: JdbcTemplate) {
     private fun topTool(userId: UUID): MirrorMoment? {
         val tools = jdbc.query(
             """
-            SELECT domain, SUM(active_seconds)::bigint AS total
-            FROM sessions WHERE user_id = ?
-            GROUP BY domain ORDER BY total DESC LIMIT 2
+            SELECT a.domain, SUM(a.active_ms)::bigint / 1000 AS total
+            FROM activity_sessions a
+            WHERE a.user_id = ?
+            GROUP BY a.domain ORDER BY total DESC LIMIT 2
             """,
             { rs, _ -> rs.getString("domain") to rs.getLong("total") },
             userId
@@ -68,33 +71,13 @@ class InsightsService(private val jdbc: JdbcTemplate) {
             "${tools[0].first} is your most-used tool. You spend ${ratio}x more time there than ${tools[1].first}.")
     }
 
-    private fun timeSavingActivity(userId: UUID): MirrorMoment? {
-        val rows = jdbc.query(
-            """
-            SELECT unnest(string_to_array(activity_type, ', ')) AS activity,
-                   COALESCE(SUM(time_saved_minutes), 0)::int AS saved
-            FROM sessions WHERE user_id = ? AND activity_type IS NOT NULL
-              AND date >= date_trunc('month', CURRENT_DATE)
-            GROUP BY activity ORDER BY saved DESC LIMIT 1
-            """,
-            { rs, _ -> rs.getString("activity") to rs.getInt("saved") },
-            userId
-        )
-        val (activity, saved) = rows.firstOrNull() ?: return null
-        if (saved == 0) return null
-        val timeStr = if (saved < 60) {
-            "$saved minutes"
-        } else {
-            "%.1f hours".format(java.util.Locale.GERMAN, saved / 60.0)
-        }
-        return MirrorMoment("time_saving_activity", "$activity is where AI saves you the most time — $timeStr freed this month.")
-    }
-
     private fun busiestDay(userId: UUID): MirrorMoment? {
         val byDay = jdbc.query(
             """
-            SELECT EXTRACT(DOW FROM date)::int AS dow, SUM(active_seconds)::bigint AS total
-            FROM sessions WHERE user_id = ?
+            SELECT EXTRACT(DOW FROM a.started_at)::int AS dow,
+                   SUM(a.active_ms)::bigint / 1000 AS total
+            FROM activity_sessions a
+            WHERE a.user_id = ?
             GROUP BY dow ORDER BY total DESC
             """,
             { rs, _ -> rs.getInt("dow") to rs.getLong("total") },
