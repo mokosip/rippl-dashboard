@@ -229,7 +229,7 @@ export function RippleSpider({ data }: { data: SpiderData[] }) {
   return (
     <div className="pond-card" style={{ overflow: 'visible', position: 'relative' }}>
       <p className="text-xs uppercase tracking-widest mb-4 text-fg-muted" style={{ letterSpacing: '1px' }}>
-        What you use AI for
+        Active time by task
       </p>
       <div className="flex justify-center">
         <canvas ref={canvasRef} width={500} height={400} style={{ width: '100%', maxWidth: 500, height: 'auto', aspectRatio: '500 / 400' }} />
@@ -240,7 +240,7 @@ export function RippleSpider({ data }: { data: SpiderData[] }) {
           whiteSpace: 'nowrap',
         }}>
           <div className="text-xs text-fg-muted">{data[tip.index].name}</div>
-          <div className="text-sm font-semibold text-fg-accent">{data[tip.index].value} min</div>
+          <div className="text-sm font-semibold text-fg-accent">{data[tip.index].value} min active</div>
         </div>
       )}
     </div>

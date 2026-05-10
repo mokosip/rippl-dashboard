@@ -111,11 +111,12 @@ class TrendsService(
     fun timeSaved(userId: UUID): TimeSaved {
         log.debug("Querying time-saved for userId: {}", userId)
 
-        data class SessionRow(val domain: String, val savedMs: Long, val confidence: String?, val taskMixJson: String?)
+        data class SessionRow(val domain: String, val activeMs: Long, val savedMs: Long, val confidence: String?, val taskMixJson: String?)
 
         val rows = jdbc.query(
             """
             SELECT a.domain,
+                   a.active_ms,
                    COALESCE(s.estimated_time_saved_ms, 0) AS saved_ms,
                    s.confidence::text AS confidence,
                    s.inferred_task_mix::text AS task_mix_json
@@ -126,6 +127,7 @@ class TrendsService(
             { rs, _ ->
                 SessionRow(
                     rs.getString("domain"),
+                    rs.getLong("active_ms"),
                     rs.getLong("saved_ms"),
                     rs.getString("confidence"),
                     rs.getString("task_mix_json")
@@ -141,17 +143,17 @@ class TrendsService(
             .filterValues { it > 0 }
             .toSortedMap(compareByDescending { key -> rows.filter { it.domain == key }.sumOf { it.savedMs } })
 
-        // Weighted task mix: proportion × time_saved per task key
+        // Weighted task mix: proportion × active_ms per task key
         val taskTotals = mutableMapOf<String, Long>()
         for (row in rows) {
-            if (row.taskMixJson == null || row.savedMs <= 0) continue
+            if (row.taskMixJson == null || row.activeMs <= 0) continue
             try {
                 @Suppress("UNCHECKED_CAST")
                 val mix = objectMapper.readValue(
                     row.taskMixJson, Map::class.java
                 ) as Map<String, Number>
                 for ((task, proportion) in mix) {
-                    val contribution = (proportion.toDouble() * row.savedMs).toLong()
+                    val contribution = (proportion.toDouble() * row.activeMs).toLong()
                     taskTotals[task] = (taskTotals[task] ?: 0L) + contribution
                 }
             } catch (_: Exception) { }
