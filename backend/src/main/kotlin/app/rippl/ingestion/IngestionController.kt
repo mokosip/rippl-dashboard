@@ -88,10 +88,15 @@ class IngestionController(
             collectorType = payload.collector.type
             val result = ingestionService.ingest(userId, payload, rawBody)
 
+            val askFeedback = ingestionService.shouldRequestFeedback(userId, result.sessionId)
             val responseBody = linkedMapOf<String, Any>(
                 "accepted" to true,
                 "session_id" to result.sessionId.toString(),
-                "feedback_request" to mapOf("ask" to false)
+                "feedback_request" to mapOf(
+                    "ask" to askFeedback,
+                    "session_id" to result.sessionId.toString(),
+                    "type" to "task_type"
+                )
             )
 
             if (result.deduped) {

@@ -1,6 +1,7 @@
 package app.rippl.ingestion
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -17,6 +18,7 @@ class IngestionService(
 
     companion object {
         private const val MAX_SESSION_DURATION_MILLIS = 24 * 60 * 60 * 1000L
+        private const val FEEDBACK_SAMPLE_RATE = 3
     }
 
     fun ingest(userId: UUID, payload: ActivitySessionRequest, rawPayload: String): IngestWriteResult {
@@ -121,6 +123,16 @@ class IngestionService(
                 )
             )
         }
+    }
+
+    private val log = LoggerFactory.getLogger(javaClass)
+
+    fun shouldRequestFeedback(userId: UUID, sessionId: UUID): Boolean {
+        val lowConfCount = repository.countLowConfidenceWithoutFeedback(userId)
+        val sampled = sessionId.hashCode().ushr(1) % FEEDBACK_SAMPLE_RATE == 0
+        log.debug("Feedback check userId={} sessionId={} lowConfCount={} sampled={}", userId, sessionId, lowConfCount, sampled)
+        if (lowConfCount == 0) return false
+        return sampled
     }
 
     private fun validateFeedback(request: SessionFeedbackRequest) {
