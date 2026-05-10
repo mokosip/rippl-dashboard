@@ -46,7 +46,7 @@ export function Trends() {
   })()
 
   const trendData = view === 'weekly' ? weekly : monthly.map(m => ({
-    week: m.month, domain: m.domain, totalSeconds: m.totalSeconds, totalSaved: m.totalSaved
+    week: m.month, domain: m.domain, totalSeconds: m.totalSeconds, totalSaved: m.totalSaved, confidence: m.confidence
   }))
 
   return (
