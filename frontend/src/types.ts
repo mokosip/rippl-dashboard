@@ -8,6 +8,7 @@ export interface WeeklyTrend {
   domain: string
   totalSeconds: number
   totalSaved: number
+  confidence: 'low' | 'medium' | 'high'
 }
 
 export interface MonthlyTrend {
@@ -15,12 +16,14 @@ export interface MonthlyTrend {
   domain: string
   totalSeconds: number
   totalSaved: number
+  confidence: 'low' | 'medium' | 'high'
 }
 
 export interface TimeSaved {
   total: number
+  confidence: 'low' | 'medium' | 'high'
   byDomain: Record<string, number>
-  byActivity: Record<string, number>
+  byTaskMix: Record<string, number>
 }
 
 export interface MirrorMoment {
