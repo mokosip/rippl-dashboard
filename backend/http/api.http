@@ -1,6 +1,8 @@
 ### Variables
 @host = http://localhost:8080
 @email = moko@example.com
+@sessionToken = PASTE_SESSION_TOKEN_HERE
+@ingestToken = PASTE_INGEST_TOKEN_HERE
 
 ### ============================================
 ### AUTH
@@ -14,24 +16,37 @@ Content-Type: application/json
 
 ### Verify magic link (paste token from DB or logs)
 # @name verify
-GET {{host}}/api/auth/verify?token=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtb2tvQGV4YW1wbGUuY29tIiwianRpIjoiNmU0MDRhM2ItZjg4OS00MmRlLWI1NjUtNTkxNjBkMWRiNmZkIiwiaWF0IjoxNzc3ODMzOTQ0LCJleHAiOjE3Nzc4MzQ4NDR9.p6cGD_bWdjy8Mawt_diYbACjcaJOSPPtdOXJKkuHavI
+GET {{host}}/api/auth/verify?token=PASTE_MAGIC_LINK_TOKEN_HERE
 
-### Get current user (needs session cookie from verify response)
+### Copy session token into @sessionToken
+### Use value from Set-Cookie header (`session=<JWT>; ...` -> copy only <JWT>)
+
+### Get current user (session cookie required)
 GET {{host}}/api/auth/me
-Cookie: session={{verify.response.headers.Set-Cookie}}
+Cookie: session={{sessionToken}}
 
 ### Logout
 POST {{host}}/api/auth/logout
-Cookie: session={{verify.response.headers.Set-Cookie}}
+Cookie: session={{sessionToken}}
 
 ### ============================================
-### SYNC
+### SYNC (Bearer ingest token required)
 ### ============================================
+
+### Create Chrome extension collector (returns token)
+# @name createCollector
+POST {{host}}/api/collectors
+Content-Type: application/json
+Cookie: session={{sessionToken}}
+
+{"type": "chrome_extension"}
+
+### Copy token from createCollector response body into @ingestToken above
 
 ### Sync sessions
 POST {{host}}/api/sync/sessions
 Content-Type: application/json
-Cookie: session={{verify.response.headers.Set-Cookie}}
+Authorization: Bearer {{ingestToken}}
 
 {
   "sessions": [
@@ -57,29 +72,6 @@ Cookie: session={{verify.response.headers.Set-Cookie}}
       "activityType": "writing",
       "estimatedWithoutMinutes": 15,
       "timeSavedMinutes": 10
-    },
-    {
-      "id": "sess-1714600000000-c5h0m4",
-      "domain": "claude.ai",
-      "startedAt": 1714600000000,
-      "endedAt": 1714602400000,
-      "activeSeconds": 2100,
-      "date": "2026-04-28",
-      "activityType": "coding",
-      "estimatedWithoutMinutes": 60,
-      "timeSavedMinutes": 40,
-      "logged": true
-    },
-    {
-      "id": "sess-1714500000000-d6i1n5",
-      "domain": "gemini.google.com",
-      "startedAt": 1714500000000,
-      "endedAt": 1714501200000,
-      "activeSeconds": 900,
-      "date": "2026-04-27",
-      "activityType": "research",
-      "estimatedWithoutMinutes": 20,
-      "timeSavedMinutes": 12
     }
   ]
 }
@@ -87,7 +79,7 @@ Cookie: session={{verify.response.headers.Set-Cookie}}
 ### Sync duplicate (should return accepted=0, duplicates=1)
 POST {{host}}/api/sync/sessions
 Content-Type: application/json
-Cookie: session={{verify.response.headers.Set-Cookie}}
+Authorization: Bearer {{ingestToken}}
 
 {
   "sessions": [
@@ -103,24 +95,146 @@ Cookie: session={{verify.response.headers.Set-Cookie}}
 }
 
 ### ============================================
+### INGESTION V1 (Bearer ingest token required)
+### ============================================
+
+### Ingest activity session (first write => 201)
+# @name ingestSession
+POST {{host}}/v1/activity-sessions
+Content-Type: application/json
+Authorization: Bearer {{ingestToken}}
+
+{
+  "collector": {
+    "type": "chrome_extension"
+  },
+  "source": {
+    "type": "browser",
+    "version": "126"
+  },
+  "session": {
+    "id": "sess-http-v1-dedupe",
+    "started_at": 1714700000000,
+    "ended_at": 1714700720000
+  },
+  "privacy": {
+    "content_collected": false,
+    "content_sent": false,
+    "prompt_collected": false,
+    "response_collected": false
+  },
+  "metrics": {
+    "sample_metric": 1,
+    "copy_events": 2
+  },
+  "context": {
+    "domain": "claude.ai",
+    "mode": "manual-http"
+  }
+}
+
+### Ingest duplicate (same session.id => 200 deduped=true)
+POST {{host}}/v1/activity-sessions
+Content-Type: application/json
+Authorization: Bearer {{ingestToken}}
+
+{
+  "collector": {
+    "type": "chrome_extension",
+    "version": "1.0.0"
+  },
+  "source": {
+    "type": "browser",
+    "version": "126"
+  },
+  "session": {
+    "id": "sess-http-v1-dedupe",
+    "started_at": 1714700000000,
+    "ended_at": 1714700720000
+  },
+  "privacy": {
+    "content_collected": false,
+    "content_sent": false,
+    "prompt_collected": false,
+    "response_collected": false
+  },
+  "metrics": {
+    "sample_metric": 999
+  },
+  "context": {
+    "domain": "claude.ai"
+  }
+}
+
+### Submit task_type feedback (upsert by type)
+@ingestSessionId = PASTE_INGEST_SESSION_ID_HERE
+POST {{host}}/v1/activity-sessions/{{ingestSessionId}}/feedback
+Content-Type: application/json
+Authorization: Bearer {{ingestToken}}
+
+{
+  "type": "task_type",
+  "value": "coding"
+}
+
+### Submit accuracy feedback (same session)
+POST {{host}}/v1/activity-sessions/{{ingestSessionId}}/feedback
+Content-Type: application/json
+Authorization: Bearer {{ingestToken}}
+
+{
+  "type": "accuracy",
+  "value": 0.9
+}
+
+### Ingest policy violation example (should return 400 policy_violation)
+POST {{host}}/v1/activity-sessions
+Content-Type: application/json
+Authorization: Bearer {{ingestToken}}
+
+{
+  "collector": {
+    "type": "chrome_extension",
+    "version": "1.0.0"
+  },
+  "source": {
+    "type": "browser",
+    "version": "126"
+  },
+  "session": {
+    "id": "sess-http-v1-policy",
+    "started_at": 1714700000000,
+    "ended_at": 1714700720000
+  },
+  "privacy": {
+    "content_collected": true,
+    "content_sent": false,
+    "prompt_collected": false,
+    "response_collected": false
+  },
+  "metrics": {},
+  "context": {}
+}
+
+### ============================================
 ### TRENDS
 ### ============================================
 
 ### Weekly trends
 GET {{host}}/api/trends/weekly
-Cookie: session={{verify.response.headers.Set-Cookie}}
+Cookie: session={{sessionToken}}
 
 ### Weekly trends with date range
 GET {{host}}/api/trends/weekly?from=2026-04-01&to=2026-05-31
-Cookie: session={{verify.response.headers.Set-Cookie}}
+Cookie: session={{sessionToken}}
 
 ### Monthly trends
 GET {{host}}/api/trends/monthly
-Cookie: session={{verify.response.headers.Set-Cookie}}
+Cookie: session={{sessionToken}}
 
 ### Time saved
 GET {{host}}/api/trends/time-saved
-Cookie: session={{verify.response.headers.Set-Cookie}}
+Cookie: session={{sessionToken}}
 
 ### ============================================
 ### INSIGHTS
@@ -128,7 +242,7 @@ Cookie: session={{verify.response.headers.Set-Cookie}}
 
 ### Mirror moments
 GET {{host}}/api/insights/mirror
-Cookie: session={{verify.response.headers.Set-Cookie}}
+Cookie: session={{sessionToken}}
 
 ### ============================================
 ### COLLECTORS
@@ -136,18 +250,18 @@ Cookie: session={{verify.response.headers.Set-Cookie}}
 
 ### List collectors
 GET {{host}}/api/collectors
-Cookie: session={{verify.response.headers.Set-Cookie}}
+Cookie: session={{sessionToken}}
 
 ### Add Chrome extension collector
 POST {{host}}/api/collectors
 Content-Type: application/json
-Cookie: session={{verify.response.headers.Set-Cookie}}
+Cookie: session={{sessionToken}}
 
 {"type": "chrome_extension"}
 
 ### Remove collector (paste ID)
 DELETE {{host}}/api/collectors/PASTE_COLLECTOR_ID_HERE
-Cookie: session={{verify.response.headers.Set-Cookie}}
+Cookie: session={{sessionToken}}
 
 ### ============================================
 ### ACCOUNT
@@ -155,15 +269,12 @@ Cookie: session={{verify.response.headers.Set-Cookie}}
 
 ### Delete account (DESTRUCTIVE - deletes user + all data)
 DELETE {{host}}/api/account
-Cookie: session={{verify.response.headers.Set-Cookie}}
+Cookie: session={{sessionToken}}
 
 ### ============================================
-### DEV HELPER: Get session token directly
-### Since magic link emails are skipped in dev,
-### use this to get a session cookie manually.
-###
-### 1. Run "Send magic link" above
-### 2. Query the auth_tokens table:
-###    SELECT token_hash FROM auth_tokens ORDER BY expires_at DESC LIMIT 1;
-### 3. Or add a log line in AuthService to print the verify link
+### DEV HELPER
 ### ============================================
+### Session token and ingest token cannot be recovered from DB in raw form.
+### DB stores hashes only. If lost, generate new ones:
+### - Session: run auth flow again
+### - Ingest: create a new collector token via POST /api/collectors

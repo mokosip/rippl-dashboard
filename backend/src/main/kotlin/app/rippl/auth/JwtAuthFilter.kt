@@ -23,8 +23,9 @@ class JwtAuthFilter(
         response: HttpServletResponse,
         chain: FilterChain
     ) {
-        val isSyncEndpoint = request.requestURI.startsWith("/api/sync/")
-        val userId = authenticateBearer(request) ?: if (!isSyncEndpoint) authenticateCookie(request) else null
+        val requiresIngestBearer = request.requestURI.startsWith("/v1/")
+        val userId = authenticateBearer(request, requiresIngestBearer)?.userId
+            ?: if (!requiresIngestBearer) authenticateCookie(request) else null
 
         if (userId != null) {
             val auth = UsernamePasswordAuthenticationToken(userId, null, emptyList())
@@ -34,17 +35,21 @@ class JwtAuthFilter(
         chain.doFilter(request, response)
     }
 
-    private fun authenticateBearer(request: HttpServletRequest): java.util.UUID? {
+    private fun authenticateBearer(request: HttpServletRequest, requiresIngestScope: Boolean): app.rippl.collectors.ExtensionTokenPrincipal? {
         val header = request.getHeader("Authorization") ?: return null
         if (!header.startsWith("Bearer ")) return null
         val token = header.removePrefix("Bearer ")
-        val userId = extensionTokenService.validateToken(token)
-        if (userId != null) {
-            log.debug("Bearer token valid, userId: {}", userId)
-        } else {
+        val principal = extensionTokenService.validateToken(token)
+        if (principal == null) {
             log.debug("Bearer token invalid for {} {}", request.method, request.requestURI)
+            return null
         }
-        return userId
+        if (requiresIngestScope && principal.scope != "ingest") {
+            log.debug("Bearer token missing ingest scope for {} {}", request.method, request.requestURI)
+            return null
+        }
+        log.debug("Bearer token valid, userId: {}, scope: {}", principal.userId, principal.scope)
+        return principal
     }
 
     private fun authenticateCookie(request: HttpServletRequest): java.util.UUID? {
