@@ -64,14 +64,8 @@ export function ProfileOnboarding({ onComplete }: Props) {
     }
   }
 
-  const skip = async () => {
-    setSaving(true)
-    try {
-      await updateProfile({ task_mix: DEFAULT_MIX })
-      onComplete()
-    } finally {
-      setSaving(false)
-    }
+  const skip = () => {
+    onComplete()
   }
 
   return (

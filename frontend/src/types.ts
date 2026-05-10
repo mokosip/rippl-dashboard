@@ -49,6 +49,7 @@ export interface TaskMix {
 export interface UserProfile {
   task_mix: TaskMix
   personal_adjustment_factor: number
+  onboarded: boolean
 }
 
 export interface ProfileTemplate {

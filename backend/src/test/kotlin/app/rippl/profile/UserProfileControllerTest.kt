@@ -67,6 +67,7 @@ class UserProfileControllerTest {
             status { isOk() }
             jsonPath("$.task_mix.coding") { value(0.7) }
             jsonPath("$.personal_adjustment_factor") { value(1.0) }
+            jsonPath("$.onboarded") { value(true) }
         }
     }
 

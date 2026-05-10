@@ -24,7 +24,7 @@ class UserProfileService(
 
     fun getProfile(userId: UUID): ProfileResponse? {
         val profile = repository.findByUserId(userId) ?: return null
-        return ProfileResponse(profile.taskMix, profile.personalAdjustmentFactor)
+        return ProfileResponse(profile.taskMix, profile.personalAdjustmentFactor, profile.onboarded)
     }
 
     fun updateProfile(userId: UUID, request: ProfileUpdateRequest): ProfileResponse {
@@ -35,10 +35,11 @@ class UserProfileService(
 
         if (request.taskMix != null) profile.taskMix = request.taskMix
         if (request.personalAdjustmentFactor != null) profile.personalAdjustmentFactor = request.personalAdjustmentFactor
+        profile.onboarded = true
         profile.updatedAt = Instant.now()
 
         repository.save(profile)
-        return ProfileResponse(profile.taskMix, profile.personalAdjustmentFactor)
+        return ProfileResponse(profile.taskMix, profile.personalAdjustmentFactor, profile.onboarded)
     }
 
     fun ensureProfileExists(userId: UUID) {

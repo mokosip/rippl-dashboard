@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+body {
+  background: var(--bg-page);
+}
+
 /* ── Layer 1: Brand Tokens (from rippl-web) ── */
 :root {
   --moss: #5C7A52;

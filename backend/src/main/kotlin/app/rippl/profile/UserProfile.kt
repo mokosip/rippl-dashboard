@@ -25,6 +25,9 @@ class UserProfile(
     @Column(name = "personal_adjustment_factor", nullable = false)
     var personalAdjustmentFactor: Double = 1.0,
 
+    @Column(name = "onboarded", nullable = false)
+    var onboarded: Boolean = false,
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     var id: UUID? = null,

@@ -14,7 +14,11 @@ function OnboardingGate() {
   const { hasProfile, markProfileComplete } = useAuth()
 
   if (hasProfile === false) {
-    return <ProfileOnboarding onComplete={markProfileComplete} />
+    return (
+      <div className="min-h-screen bg-page">
+        <ProfileOnboarding onComplete={markProfileComplete} />
+      </div>
+    )
   }
 
   return <Layout />

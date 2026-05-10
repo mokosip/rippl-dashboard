@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(u)
       if (u) {
         const p = await getProfile()
-        setHasProfile(p !== null)
+        setHasProfile(p?.onboarded ?? false)
       }
     } catch {
       setUser(null)

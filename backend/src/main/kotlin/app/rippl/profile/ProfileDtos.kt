@@ -4,7 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 data class ProfileResponse(
     @JsonProperty("task_mix") val taskMix: TaskMix,
-    @JsonProperty("personal_adjustment_factor") val personalAdjustmentFactor: Double
+    @JsonProperty("personal_adjustment_factor") val personalAdjustmentFactor: Double,
+    val onboarded: Boolean
 )
 
 data class ProfileUpdateRequest(
