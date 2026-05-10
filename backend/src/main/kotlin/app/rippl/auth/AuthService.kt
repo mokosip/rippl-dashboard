@@ -1,5 +1,6 @@
 package app.rippl.auth
 
+import app.rippl.profile.UserProfileService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -14,6 +15,7 @@ class AuthService(
     private val userRepository: UserRepository,
     private val authTokenRepository: AuthTokenRepository,
     private val jwtService: JwtService,
+    private val userProfileService: UserProfileService,
     @Value("\${app.resend.api-key}") private val resendApiKey: String,
     @Value("\${app.resend.from}") private val fromEmail: String,
     @Value("\${app.base-url}") private val baseUrl: String,
@@ -94,7 +96,9 @@ class AuthService(
         authToken.usedAt = Instant.now()
         authTokenRepository.save(authToken)
 
-        return userRepository.findById(authToken.userId).orElse(null)
+        val user = userRepository.findById(authToken.userId).orElse(null) ?: return null
+        userProfileService.ensureProfileExists(user.id!!)
+        return user
     }
 
     fun findById(userId: UUID): User? = userRepository.findById(userId).orElse(null)
