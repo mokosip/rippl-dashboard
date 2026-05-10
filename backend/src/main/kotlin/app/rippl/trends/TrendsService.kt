@@ -12,6 +12,9 @@ class TrendsService(
     private val jdbc: JdbcTemplate,
     private val objectMapper: ObjectMapper
 ) {
+    companion object {
+        private val KNOWN_TASKS = setOf("writing", "coding", "research", "planning", "communication", "other")
+    }
     private val log = LoggerFactory.getLogger(javaClass)
 
     private fun weightedConfidence(rows: List<Pair<String, Int>>): String {
@@ -153,6 +156,7 @@ class TrendsService(
                     row.taskMixJson, Map::class.java
                 ) as Map<String, Number>
                 for ((task, proportion) in mix) {
+                    if (task !in KNOWN_TASKS) continue
                     val contribution = (proportion.toDouble() * row.activeMs).toLong()
                     taskTotals[task] = (taskTotals[task] ?: 0L) + contribution
                 }
