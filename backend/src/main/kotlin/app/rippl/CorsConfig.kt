@@ -32,7 +32,7 @@ class CorsConfig(
 
         val dashboardConfig = CorsConfiguration().apply {
             allowedOrigins = listOf(frontendUrl)
-            allowedMethods = listOf("GET", "POST", "DELETE")
+            allowedMethods = listOf("GET", "POST", "PUT", "DELETE")
             allowedHeaders = listOf("Authorization", "Content-Type", "X-Request-Id")
             allowCredentials = true
         }
