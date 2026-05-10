@@ -23,7 +23,7 @@ class TrendsService(
             weightedSum += level.toLong() * saved
             totalWeight += saved
         }
-        if (totalWeight == 0L) return "high"
+        if (totalWeight == 0L) return "low"
         val avg = weightedSum.toDouble() / totalWeight
         return when {
             avg >= 2.5 -> "high"
@@ -174,7 +174,7 @@ class TrendsService(
             """
             SELECT EXTRACT(DOW FROM a.started_at)::int AS dow,
                    EXTRACT(HOUR FROM a.started_at)::int AS hour,
-                   COALESCE(SUM(s.estimated_time_saved_ms / 60000), 0)::int AS saved
+                   (COALESCE(SUM(s.estimated_time_saved_ms), 0) / 60000)::int AS saved
             FROM activity_sessions a
             LEFT JOIN scored_sessions s ON s.activity_session_id = a.id
             WHERE a.user_id = ?
