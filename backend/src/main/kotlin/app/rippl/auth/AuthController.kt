@@ -33,7 +33,7 @@ class AuthController(
     }
 
     @GetMapping("/verify")
-    fun verify(@RequestParam token: String): ResponseEntity<Void> {
+    fun verify(@RequestParam token: String, request: jakarta.servlet.http.HttpServletRequest): ResponseEntity<Void> {
         log.debug("Token verification attempt: {}...", token.take(20))
         val user = authService.verifyMagicLink(token)
             ?: run {
@@ -47,7 +47,7 @@ class AuthController(
         val sessionToken = jwtService.generateSessionToken(user.id!!)
         val cookie = ResponseCookie.from("session", sessionToken)
             .httpOnly(true)
-            .secure(true)
+            .secure(request.isSecure)
             .path("/")
             .maxAge(Duration.ofDays(7))
             .sameSite("Lax")
@@ -79,11 +79,11 @@ class AuthController(
     }
 
     @PostMapping("/logout")
-    fun logout(): ResponseEntity<Void> {
+    fun logout(request: jakarta.servlet.http.HttpServletRequest): ResponseEntity<Void> {
         log.debug("User logout")
         val cookie = ResponseCookie.from("session", "")
             .httpOnly(true)
-            .secure(true)
+            .secure(request.isSecure)
             .path("/")
             .maxAge(Duration.ZERO)
             .sameSite("Lax")

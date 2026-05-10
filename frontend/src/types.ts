@@ -36,3 +36,23 @@ export interface CollectorInfo {
   lastSyncAt?: string
   token?: string
 }
+
+export interface TaskMix {
+  writing: number
+  coding: number
+  research: number
+  planning: number
+  communication: number
+  other: number
+}
+
+export interface UserProfile {
+  task_mix: TaskMix
+  personal_adjustment_factor: number
+  onboarded: boolean
+}
+
+export interface ProfileTemplate {
+  name: string
+  task_mix: TaskMix
+}

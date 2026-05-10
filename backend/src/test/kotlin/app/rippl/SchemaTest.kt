@@ -27,14 +27,15 @@ class SchemaTest {
             "extension_tokens",
             "activity_sessions",
             "activity_feedback",
-            "estimated_sessions"
+            "scored_sessions",
+            "user_profiles"
         ))) {
             "Missing tables. Found: $tables"
         }
     }
 
     @Test
-    fun `estimated_sessions user_id has no FK to users`() {
+    fun `scored_sessions user_id has no FK to users`() {
         // user_id is denormalized; must NOT have a FK constraint referencing users
         val fkCount = jdbc.queryForObject(
             """
@@ -44,13 +45,13 @@ class SchemaTest {
                 ON kcu.constraint_name = rc.constraint_name
                AND kcu.constraint_schema = rc.constraint_schema
             WHERE rc.constraint_schema = 'public'
-              AND kcu.table_name = 'estimated_sessions'
+              AND kcu.table_name = 'scored_sessions'
               AND kcu.column_name = 'user_id'
             """.trimIndent(),
             Int::class.java
         )
         assert(fkCount == 0) {
-            "estimated_sessions.user_id must not have a FK constraint but found $fkCount"
+            "scored_sessions.user_id must not have a FK constraint but found $fkCount"
         }
     }
 
@@ -65,13 +66,13 @@ class SchemaTest {
     }
 
     @Test
-    fun `estimated_sessions has idx_estimated_sessions_user_confidence index`() {
+    fun `scored_sessions has idx_scored_sessions_user_confidence index`() {
         val indexes = jdbc.queryForList(
-            "SELECT indexname FROM pg_indexes WHERE tablename = 'estimated_sessions'",
+            "SELECT indexname FROM pg_indexes WHERE tablename = 'scored_sessions'",
             String::class.java
         )
-        assert(indexes.contains("idx_estimated_sessions_user_confidence")) {
-            "Missing idx_estimated_sessions_user_confidence. Found: $indexes"
+        assert(indexes.contains("idx_scored_sessions_user_confidence")) {
+            "Missing idx_scored_sessions_user_confidence. Found: $indexes"
         }
     }
 

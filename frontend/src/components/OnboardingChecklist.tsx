@@ -4,9 +4,10 @@ export function OnboardingChecklist() {
       <h2 className="text-2xl font-bold font-serif text-fg">Welcome to rippl</h2>
       <p className="mt-2 text-fg-secondary">Let's get you set up</p>
       <div className="mt-8 space-y-4 text-left">
-        <Step number={1} title="Connect a data source" description="Install the Chrome extension to start tracking your AI usage." />
-        <Step number={2} title="Use AI for a day" description="Browse your favorite AI tools. We'll capture your sessions automatically." />
-        <Step number={3} title="See your insights" description="Come back here to explore trends, time saved, and mirror moments." />
+        <Step number={1} title="Set up your AI profile" description="Tell us how you use AI to personalize your experience." done />
+        <Step number={2} title="Connect a data source" description="Install the Chrome extension to start tracking your AI usage." />
+        <Step number={3} title="Use AI for a day" description="Browse your favorite AI tools. We'll capture your sessions automatically." />
+        <Step number={4} title="See your insights" description="Come back here to explore trends, time saved, and mirror moments." />
       </div>
       <a
         href="/settings"
@@ -18,11 +19,11 @@ export function OnboardingChecklist() {
   )
 }
 
-function Step({ number, title, description }: { number: number; title: string; description: string }) {
+function Step({ number, title, description, done }: { number: number; title: string; description: string; done?: boolean }) {
   return (
     <div className="flex gap-4 items-start">
-      <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0 bg-accent text-fg-accent">
-        {number}
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0 ${done ? 'bg-primary text-fg-on-primary' : 'bg-accent text-fg-accent'}`}>
+        {done ? '✓' : number}
       </div>
       <div>
         <p className="font-medium text-fg">{title}</p>

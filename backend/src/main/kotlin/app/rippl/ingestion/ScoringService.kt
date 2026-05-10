@@ -4,8 +4,8 @@ import org.springframework.stereotype.Service
 import java.util.UUID
 
 @Service
-class EstimationService(
-    private val estimationRepository: EstimationRepository
+class ScoringService(
+    private val scoringRepository: ScoringRepository
 ) {
 
     companion object {
@@ -16,25 +16,25 @@ class EstimationService(
         private const val PLACEHOLDER_METHOD = "global_fallback"
     }
 
-    fun estimateInitial(sessionId: UUID) {
-        estimationRepository.upsertEstimation(
+    fun scoreInitial(sessionId: UUID) {
+        scoringRepository.upsertScoring(
             sessionId = sessionId,
             inferredTaskMixJson = PLACEHOLDER_TASK_MIX,
             effectiveMultiplier = PLACEHOLDER_MULTIPLIER,
             estimatedTimeSavedMs = PLACEHOLDER_TIME_SAVED_MS,
             confidence = PLACEHOLDER_CONFIDENCE,
-            estimationMethod = PLACEHOLDER_METHOD
+            scoringMethod = PLACEHOLDER_METHOD
         )
     }
 
-    fun reestimateFromFeedback(sessionId: UUID) {
-        estimationRepository.upsertEstimation(
+    fun rescoreFromFeedback(sessionId: UUID) {
+        scoringRepository.upsertScoring(
             sessionId = sessionId,
             inferredTaskMixJson = PLACEHOLDER_TASK_MIX,
             effectiveMultiplier = PLACEHOLDER_MULTIPLIER,
             estimatedTimeSavedMs = PLACEHOLDER_TIME_SAVED_MS,
             confidence = PLACEHOLDER_CONFIDENCE,
-            estimationMethod = PLACEHOLDER_METHOD
+            scoringMethod = PLACEHOLDER_METHOD
         )
     }
 }
