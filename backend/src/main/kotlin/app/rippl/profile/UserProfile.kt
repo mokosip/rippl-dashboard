@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import org.hibernate.annotations.ColumnTransformer
 import java.time.Instant
 import java.util.UUID
 
@@ -18,6 +19,7 @@ class UserProfile(
 
     @Convert(converter = TaskMixConverter::class)
     @Column(name = "task_mix", columnDefinition = "jsonb", nullable = false)
+    @ColumnTransformer(write = "?::jsonb")
     var taskMix: TaskMix = TaskMix.GLOBAL_DEFAULT,
 
     @Column(name = "personal_adjustment_factor", nullable = false)
