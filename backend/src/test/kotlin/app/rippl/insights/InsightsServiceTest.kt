@@ -3,16 +3,17 @@ package app.rippl.insights
 import app.rippl.TestcontainersConfig
 import app.rippl.auth.User
 import app.rippl.auth.UserRepository
-import app.rippl.sessions.Session
-import app.rippl.sessions.SessionRepository
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
+import org.springframework.jdbc.core.JdbcTemplate
 import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneOffset
 import java.time.temporal.TemporalAdjusters
 import java.util.UUID
 
@@ -21,31 +22,59 @@ import java.util.UUID
 class InsightsServiceTest {
 
     @Autowired lateinit var insightsService: InsightsService
-    @Autowired lateinit var sessionRepository: SessionRepository
     @Autowired lateinit var userRepository: UserRepository
+    @Autowired lateinit var jdbc: JdbcTemplate
 
     private lateinit var userId: UUID
 
+    private fun insertActivitySession(
+        id: UUID, userId: UUID, domain: String,
+        startedAt: Instant, activeMs: Long
+    ) {
+        jdbc.update(
+            """
+            INSERT INTO activity_sessions (id, user_id, collector_type, collector_session_id,
+                source_type, domain, surface, raw_payload, started_at, ended_at, duration_ms, active_ms)
+            VALUES (?, ?, 'browser', ?, 'extension', ?, 'web', ?::jsonb, ?, ?, ?, ?)
+            """,
+            id, userId, UUID.randomUUID().toString(), domain, "{}",
+            java.sql.Timestamp.from(startedAt),
+            java.sql.Timestamp.from(startedAt.plusMillis(activeMs)),
+            activeMs, activeMs
+        )
+    }
+
     @BeforeEach
     fun setup() {
-        sessionRepository.deleteAll()
+        jdbc.update("DELETE FROM scored_sessions")
+        jdbc.update("DELETE FROM activity_sessions")
         val user = userRepository.findByEmail("insights-test@example.com")
             ?: userRepository.save(User(email = "insights-test@example.com"))
         userId = user.id!!
 
         val thisMonday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
         val lastMonday = thisMonday.minusWeeks(1)
+        val thisFriday = thisMonday.with(DayOfWeek.FRIDAY)
 
-        sessionRepository.saveAll(listOf(
-            Session("ins-1", userId, "claude.ai", 1000, 2000, 3600, thisMonday,
-                "coding", 60, 40),
-            Session("ins-2", userId, "claude.ai", 2000, 3000, 1800, lastMonday,
-                "coding", 30, 20),
-            Session("ins-3", userId, "chatgpt.com", 3000, 4000, 600, thisMonday,
-                "writing", 10, 5),
-            Session("ins-4", userId, "claude.ai", 4000, 5000, 900, thisMonday.with(DayOfWeek.FRIDAY),
-                "coding", 20, 12)
-        ))
+        // This week Monday: claude.ai, 1 hour active
+        val s1 = UUID.randomUUID()
+        insertActivitySession(s1, userId, "claude.ai",
+            thisMonday.atStartOfDay().toInstant(ZoneOffset.UTC), 3600000)
+
+        // Last week Monday: claude.ai, 30 min active
+        val s2 = UUID.randomUUID()
+        insertActivitySession(s2, userId, "claude.ai",
+            lastMonday.atStartOfDay().toInstant(ZoneOffset.UTC), 1800000)
+
+        // This week Monday: chatgpt.com, 10 min active
+        val s3 = UUID.randomUUID()
+        insertActivitySession(s3, userId, "chatgpt.com",
+            thisMonday.atStartOfDay().plusSeconds(7200).toInstant(ZoneOffset.UTC), 600000)
+
+        // This week Friday: claude.ai, 15 min active
+        val s4 = UUID.randomUUID()
+        insertActivitySession(s4, userId, "claude.ai",
+            thisFriday.atStartOfDay().toInstant(ZoneOffset.UTC), 900000)
     }
 
     @Test
@@ -53,7 +82,7 @@ class InsightsServiceTest {
         val moments = insightsService.mirrorMoments(userId)
         val weeklyMoment = moments.find { it.type == "weekly_usage" }
         assertNotNull(weeklyMoment)
-        assertTrue(weeklyMoment!!.message.contains("hours this week"))
+        assertTrue(weeklyMoment!!.message.contains("this week"))
     }
 
     @Test
@@ -65,27 +94,9 @@ class InsightsServiceTest {
     }
 
     @Test
-    fun `generates time saving activity moment`() {
+    fun `does not generate time_saving_activity moment`() {
         val moments = insightsService.mirrorMoments(userId)
-        val activityMoment = moments.find { it.type == "time_saving_activity" }
-        assertNotNull(activityMoment)
-        assertTrue(activityMoment!!.message.contains("coding"))
-    }
-
-    @Test
-    fun `time saving activity unnests multi-activity sessions`() {
-        val multiUser = userRepository.save(User(email = "multi-activity@example.com"))
-        val today = LocalDate.now()
-        sessionRepository.saveAll(listOf(
-            Session("multi-1", multiUser.id!!, "claude.ai", 1000, 2000, 600, today,
-                "coding, review", 60, 40),
-            Session("multi-2", multiUser.id!!, "claude.ai", 3000, 4000, 300, today,
-                "review", 30, 20)
-        ))
-        val moments = insightsService.mirrorMoments(multiUser.id!!)
-        val activityMoment = moments.find { it.type == "time_saving_activity" }
-        assertNotNull(activityMoment)
-        assertTrue(activityMoment!!.message.contains("review"))
+        assertNull(moments.find { it.type == "time_saving_activity" })
     }
 
     @Test

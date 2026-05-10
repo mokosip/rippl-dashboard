@@ -108,6 +108,24 @@ class IngestionRepository(
         ) ?: 0
     }
 
+    fun countLowConfidenceWithoutFeedback(userId: UUID): Int {
+        return jdbc.queryForObject(
+            """
+            SELECT COUNT(*)
+            FROM scored_sessions s
+            WHERE s.user_id = ?
+              AND s.confidence = 'low'
+              AND NOT EXISTS (
+                  SELECT 1 FROM activity_feedback f
+                  WHERE f.session_id = s.activity_session_id
+                    AND f.feedback_type = 'task_type'
+              )
+            """,
+            Int::class.java,
+            userId
+        ) ?: 0
+    }
+
     fun findLastSyncedAt(userId: UUID): Instant? {
         return jdbc.query(
             "SELECT MAX(synced_at) AS last_sync FROM activity_sessions WHERE user_id = ?",
