@@ -18,7 +18,7 @@ class IngestionService(
 
     companion object {
         private const val MAX_SESSION_DURATION_MILLIS = 24 * 60 * 60 * 1000L
-        private const val FEEDBACK_SAMPLE_RATE = 3
+        private const val FEEDBACK_SAMPLE_RATE = 1
     }
 
     fun ingest(userId: UUID, payload: ActivitySessionRequest, rawPayload: String): IngestWriteResult {
